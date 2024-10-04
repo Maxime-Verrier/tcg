@@ -8,6 +8,7 @@ use ui::ui_plugin;
 mod state;
 mod ui;
 mod scene;
+mod cards;
 
 fn main() {
     let mut app = App::new();

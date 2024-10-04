@@ -1420,6 +1420,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "card"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "cc"
 version = "1.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3921,6 +3928,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "card",
  "epithet",
 ]
 
