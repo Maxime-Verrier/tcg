@@ -1,4 +1,5 @@
 pub use bevy::prelude::*;
+use card::{Board, OnBoard, OnField};
 use epithet::utils::LevelEntity;
 
 pub fn create_dev_room_core_scene(mut commands: Commands) {
@@ -10,6 +11,8 @@ pub fn create_dev_room_core_scene(mut commands: Commands) {
         LevelEntity,
     ));
 }
-pub fn create_dev_room_scene() {
+pub fn create_dev_room_scene(mut commands: Commands) {
+    let board = commands.spawn((Board::default(), LevelEntity)).id();
 
+    commands.spawn((OnBoard(board), OnField, LevelEntity));
 }

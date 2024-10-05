@@ -1,13 +1,26 @@
-use bevy::{app::{App, Update}, input::ButtonInput, prelude::{in_state, resource_exists, AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter, OnExit, Res, ResMut, States}};
-use epithet::{net::{NetState, UserInfo}, utils::clean_scene};
+use bevy::{
+    app::{App, Update},
+    input::ButtonInput,
+    prelude::{
+        in_state, resource_exists, AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter,
+        OnExit, Res, ResMut, States,
+    },
+};
+use epithet::{
+    net::{NetState, UserInfo},
+    utils::clean_scene,
+};
 
-use crate::{scene::{create_dev_room_core_scene, create_dev_room_scene}, ui::create_main_menu};
+use crate::{
+    scene::{create_dev_room_core_scene, create_dev_room_scene},
+    ui::create_main_menu,
+};
 
 #[derive(States, Default, Hash, Clone, Eq, PartialEq, Debug)]
 pub enum AppState {
     #[default]
     MainMenu,
-    Game
+    Game,
 }
 
 pub fn state_plugin(app: &mut App) {

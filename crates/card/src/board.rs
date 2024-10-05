@@ -1,7 +1,13 @@
-use bevy::{ecs::component::{ComponentHooks, StorageType}, math::{IVec3, Vec2}, prelude::{Component, Entity}, utils::HashMap};
-use std::collections::HashMap;
+use bevy::{
+    ecs::component::{ComponentHooks, StorageType},
+    math::{IVec3, Vec2},
+    prelude::{Component, Entity},
+    utils::{HashMap, HashSet},
+};
 
-pub struct OnBoard(Entity);
+/// Mark the entity as part of x board
+/// TODO speak of sync/parameters
+pub struct OnBoard(pub Entity);
 
 #[derive(Component)]
 pub struct OnField;
@@ -10,70 +16,81 @@ impl Component for OnBoard {
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.on_remove(|mut world, card_entity, _component_id|{
+        hooks.on_add(|mut world, card_entity, _component_id| {});
+        hooks.on_remove(|mut world, card_entity, _component_id| {
             if let Some(on_field) = world.get::<OnBoard>(card_entity) {
-				if let Some(mut field) = world.get_mut::<Board>(on_field.0) {
-					field.remove_entity_from_field(&card_entity);
-				}
+                if let Some(mut field) = world.get_mut::<Board>(on_field.0) {
+                    field.remove_from_board(&card_entity);
+                }
             }
         });
     }
 }
 
-
-/// A component representing a board existing mainly for the purpose of lookup
-/// This lookup component stay in sync with any entity having a OnField component
+/// A component representing a board existing both as a marker and a lookup table to get entity on the board by common values
+/// The reason for this lookup table exist is to reduce iteration when needing to get entities by x by value as we can't query entites just for x board/hand/player/etc..
+/// ex: entities on this board, entities at x pos of the board, cards of x player etc
+/// The lookup tables are automaticly synched internally when entites get their component removed/changed/added so no need to their values to the table
 #[derive(Default, Debug)]
 pub struct Board {
-	pos_to_field_entity: HashMap<IVec3, Entity>,
-	field_entity_to_pos: HashMap<Entity, IVec3>,
-	player_to_field_entities: HashMap<u32, Vec<Entity>>, // New index for player entities
+    // Lookup maps
+    pos_lookup: HashMap<IVec3, Entity>,
+
+    // List of entity on the board and a player lookup at the same time
+    // Not using a Vec with no associate value as it's will be mean reallocating everything and iteration are rarer than insert/remove, even if it's doesnt rly matter at the frequency of a card game
+    board_lookup: HashSet<Entity>,
+    player_lookup: HashMap<u32, HashSet<Entity>>,
 }
 
 impl Board {
-	pub fn add_entity_to_field(&mut self, pos: IVec3, entity: Entity, player: Player) {
-		self.pos_to_field_entity.insert(pos, entity);
-		self.field_entity_to_pos.insert(entity, pos);
-		self.player_to_field_entities.entry(player).or_default().push(entity);
-	}
+    fn insert_on_board(&mut self, entity: Entity) {
+        self.board_lookup.insert(entity);
+    }
 
-	pub fn remove_entity_from_field(&mut self, entity: &Entity) -> Option<IVec3> {
-		if let Some(pos) = self.field_entity_to_pos.remove(entity) {
-			self.pos_to_field_entity.remove(&pos);
-			for entities in self.player_to_field_entities.values_mut() {
-				entities.retain(|&e| e != *entity);
-			}
-			return Some(pos);
-		}
-		None
-	}
+    fn insert_by_player(&mut self, player: u32, entity: Entity) {
+        if let Some(entities) = self.player_lookup.get_mut(&player) {
+            entities.insert(entity);
+        }
+    }
 
-	pub fn get_field_entity(&self, pos: &IVec3) -> Option<&Entity> {
-		self.pos_to_field_entity.get(pos)
-	}
+    fn remove_from_board(&mut self, entity: &Entity) -> bool {
+        self.board_lookup.remove(entity)
+    }
 
-	pub fn get_card_by_entity(&self, entity: &Entity) -> Option<&IVec3> {
-		self.field_entity_to_pos.get(entity)
-	}
+    fn remove_pos(&mut self, pos: &IVec3) -> Option<Entity> {
+        self.pos_lookup.remove(pos)
+    }
 
-	pub fn query_by_player(&self, player: Player) -> Option<&Vec<Entity>> {
-		self.player_to_field_entities.get(&player)
-	}
+    fn remove_player(&mut self, player: u32, entity: &Entity) -> bool {
+        self.player_lookup
+            .get_mut(&player)
+            .map_or(false, |entities| entities.remove(entity))
+    }
+
+    pub fn get_by_pos(&self, pos: &IVec3) -> Option<&Entity> {
+        self.pos_lookup.get(pos)
+    }
+
+    pub fn get_by_player(&self, player: u32) -> Option<&HashSet<Entity>> {
+        self.player_lookup.get(&player)
+    }
 }
 
 impl Component for Board {
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
-		hooks.on_remove(|mut world, field_entity, _component_id| {
-			if let Some(field) = world.get::<Board>(field_entity) {
-				let card_entities: Vec<Entity> = field.pos_to_field_entity.values().cloned().collect();
-				for card_entity in card_entities {
-					if let Some(mut card_commands) = world.commands().get_entity(card_entity) {
-						card_commands.remove::<OnBoard>();
-					}
-				}
-			}
-		});
-	}
+        hooks.on_remove(|mut world, field_entity, _component_id| {
+            if let Some(field) = world.get::<Board>(field_entity) {
+                let card_entities: Vec<Entity> = field.board_lookup.iter().cloned().collect();
+
+                for card_entity in card_entities {
+                    if let Some(mut card_commands) = world.commands().get_entity(card_entity) {
+                        card_commands.remove::<OnBoard>();
+                        card_commands.remove::<OnField>();
+                    }
+                }
+            }
+        });
+    }
 }
