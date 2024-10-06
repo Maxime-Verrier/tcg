@@ -2,14 +2,11 @@ use bevy::{
     app::{App, Update},
     input::ButtonInput,
     prelude::{
-        in_state, resource_exists, AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter,
-        OnExit, Res, ResMut, States,
+        in_state, AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter, OnExit, Res,
+        ResMut, States,
     },
 };
-use epithet::{
-    net::{NetState, UserInfo},
-    utils::clean_scene,
-};
+use epithet::{net::NetState, utils::clean_scene};
 
 use crate::{
     scene::{create_dev_room_core_scene, create_dev_room_scene},
@@ -35,7 +32,9 @@ pub fn state_plugin(app: &mut App) {
         OnEnter(AppState::Game),
         (
             create_dev_room_core_scene,
-            create_dev_room_scene.run_if(in_state(NetState::Server)),
+            create_dev_room_scene
+                .after(create_dev_room_core_scene)
+                .run_if(in_state(NetState::Server)),
         ),
     );
     app.add_systems(OnExit(AppState::Game), clean_scene);
