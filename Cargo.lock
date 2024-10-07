@@ -1424,6 +1424,7 @@ name = "card"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "epithet",
  "rand",
 ]
 

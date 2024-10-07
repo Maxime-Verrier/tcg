@@ -19,6 +19,7 @@ pub struct CardPlugin;
 impl Plugin for CardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_resource::<CardAssets>();
+        app.add_event::<OnCardAddedOnHand>();
 
         app.add_systems(Startup, setup);
         app.observe(added_on_hand_observer);
@@ -26,7 +27,7 @@ impl Plugin for CardPlugin {
 }
 
 fn setup(mut card_assets: ResMut<CardAssets>, mut meshes: ResMut<Assets<Mesh>>, mut mats: ResMut<Assets<StandardMaterial>>, assets: Res<AssetServer>) {
-    card_assets.face_mesh = meshes.add(Plane3d::new(Vec3::Y, Vec2::new(CARD_WIDTH, CARD_HEIGHT)));
+    card_assets.face_mesh = meshes.add(Plane3d::new(Vec3::Z, Vec2::new(CARD_WIDTH/2.0, CARD_HEIGHT/2.0)));
     card_assets.back_material = mats.add(StandardMaterial {
         base_color_texture: Some(assets.load("cards/art.png")),
         unlit: true,
@@ -39,7 +40,7 @@ fn setup(mut card_assets: ResMut<CardAssets>, mut meshes: ResMut<Assets<Mesh>>, 
         ..default()
     });
     card_assets.insert_art(CardId(0), mats.add(StandardMaterial {
-        base_color_texture: Some(assets.load("cards/art2.png")),
+        base_color_texture: Some(assets.load("cards/art3.png")),
         unlit: true,
         ..default()
     }));

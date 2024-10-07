@@ -1,4 +1,5 @@
 use bevy::{asset::Handle, core::Name, ecs::{component::{ComponentHooks, StorageType}, query, system::{EntityCommand, EntityCommands}}, math::{IVec2, Quat}, pbr::{PbrBundle, StandardMaterial}, prelude::{default, BuildChildren, Bundle, Component, GlobalTransform, InheritedVisibility, Mesh, Plane3d, QueryState, Resource, Transform, ViewVisibility, Visibility}, utils::HashMap};
+use epithet::utils::LevelEntity;
 
 use crate::OnBoard;
 
@@ -17,6 +18,7 @@ pub struct CardBundle {
     pub visibility: Visibility,
     pub inherited_visibility: InheritedVisibility,
     pub view_visibility: ViewVisibility,
+    pub level_entity: LevelEntity,
     pub name: Name
 }
 
@@ -27,7 +29,8 @@ impl Default for CardBundle {
             card: Card::default(),
             visibility: Visibility::default(),
             inherited_visibility: InheritedVisibility::default(),
-            view_visibility: ViewVisibility::default()
+            view_visibility: ViewVisibility::default(),
+            level_entity: LevelEntity
         }
     }
 }
@@ -59,16 +62,16 @@ impl CardAssets {
         commands.with_children(|parent| {
             parent
                 .spawn(PbrBundle {
+                    material: self.back_material.clone(),
                     mesh: self.face_mesh.clone(),
-                    material: self.arts.get(id).unwrap().clone(), //TODO handle unwrap
                     ..default()
                 })
                 .with_children(|parent| {
                     parent.spawn(PbrBundle {
                         mesh: self.face_mesh.clone(),
-                        material: self.back_material.clone(),
+                        material: self.arts.get(id).unwrap().clone(), //TODO handle unwrap
                         transform: Transform::IDENTITY
-                            .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
+                            .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
                         ..default()
                     });
                 });
