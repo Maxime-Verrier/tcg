@@ -1,15 +1,17 @@
 [package]
-name = "card"
+name = "tcg"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-rand = "0.8.5"
+epithet = { workspace = true }
+card = { workspace = true }
+bevy-inspector-egui = "0.26.0"
 
 [dev-dependencies]
 bevy = { workspace = true }
 
 [features]
 default = ["render"]
-render = []
+render = ["card/render"]

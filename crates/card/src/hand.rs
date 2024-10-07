@@ -1,6 +1,6 @@
 use bevy::{ecs::component::{ComponentHooks, StorageType}, prelude::*, utils::warn};
 
-use crate::{Board, Card, OnBoard, Player};
+use crate::{Board, Card, OnBoard, Player, CARD_WIDTH};
 
 #[derive(Clone, Copy)]
 pub struct OnHand;
@@ -41,14 +41,19 @@ pub(crate) fn added_on_hand_observer(trigger: Trigger<OnInsert, OnHand>, mut com
         if let Ok(board) = boards.get(on_board.0) {
             if let Some(hand) = board.get_by_hand(player.0) {
                 let len = hand.len();
+
+                let radius = CARD_WIDTH * 7.0;
+                let angle_offset = -10.0; // degree
                 let mut i = 0;
-                println!("hand_observer got a hand with {} cards", len);
+
                 for card in hand.iter() {
-                    println!("hand_observer got a card entity from the board loookup");
+                    let angle = angle_offset * (i as f32 - ((len - 1) as f32 / 2.0));
+                    let x = (angle + 90.0).to_radians().cos() * radius;
+                    let z = ((angle + 90.0).abs()).to_radians().sin() * -radius + radius;
+
                     if let Some(mut card_entity) = commands.get_entity(*card) {
-                        println!("hand_observer got a card entity from the board loookup");
                         card_entity.insert(TransformBundle {
-                            local: Transform::from_translation(Vec3::new(0.1 * i as f32, 0.0, 0.0)),
+                            local: Transform::from_translation(Vec3::new(x, 0.0001 * i as f32, z)).with_rotation(Quat::from_rotation_y(angle.to_radians())),
                             ..default()
                         });
                         i = i + 1;
