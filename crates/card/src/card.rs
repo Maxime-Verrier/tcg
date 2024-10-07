@@ -1,4 +1,19 @@
-use bevy::{asset::Handle, core::Name, ecs::{component::{ComponentHooks, StorageType}, query, system::{EntityCommand, EntityCommands}}, math::{IVec2, Quat}, pbr::{PbrBundle, StandardMaterial}, prelude::{default, BuildChildren, Bundle, Component, GlobalTransform, InheritedVisibility, Mesh, Plane3d, QueryState, Resource, Transform, ViewVisibility, Visibility}, utils::HashMap};
+use bevy::{
+    asset::Handle,
+    core::Name,
+    ecs::{
+        component::{ComponentHooks, StorageType},
+        query,
+        system::{EntityCommand, EntityCommands},
+    },
+    math::{IVec2, Quat},
+    pbr::{PbrBundle, StandardMaterial},
+    prelude::{
+        default, BuildChildren, Bundle, Component, GlobalTransform, InheritedVisibility, Mesh,
+        Plane3d, QueryState, Resource, Transform, ViewVisibility, Visibility,
+    },
+    utils::HashMap,
+};
 use epithet::utils::LevelEntity;
 
 use crate::OnBoard;
@@ -19,7 +34,7 @@ pub struct CardBundle {
     pub inherited_visibility: InheritedVisibility,
     pub view_visibility: ViewVisibility,
     pub level_entity: LevelEntity,
-    pub name: Name
+    pub name: Name,
 }
 
 impl Default for CardBundle {
@@ -30,7 +45,7 @@ impl Default for CardBundle {
             visibility: Visibility::default(),
             inherited_visibility: InheritedVisibility::default(),
             view_visibility: ViewVisibility::default(),
-            level_entity: LevelEntity
+            level_entity: LevelEntity,
         }
     }
 }
@@ -40,17 +55,22 @@ pub struct CardAssets {
     pub back_material: Handle<StandardMaterial>,
     pub deck_mesh: Handle<Mesh>,
     pub deck_material: Handle<StandardMaterial>,
-    arts: HashMap<CardId, Handle<StandardMaterial>>
+    arts: HashMap<CardId, Handle<StandardMaterial>>,
 }
 
 impl CardAssets {
-    pub fn new(face_mesh: Handle<Mesh>, back_material: Handle<StandardMaterial>, deck_mesh: Handle<Mesh>, deck_material: Handle<StandardMaterial>) -> Self {
+    pub fn new(
+        face_mesh: Handle<Mesh>,
+        back_material: Handle<StandardMaterial>,
+        deck_mesh: Handle<Mesh>,
+        deck_material: Handle<StandardMaterial>,
+    ) -> Self {
         Self {
             face_mesh,
             back_material,
             deck_mesh,
             deck_material,
-            arts: HashMap::default()
+            arts: HashMap::default(),
         }
     }
 

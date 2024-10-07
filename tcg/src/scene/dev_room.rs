@@ -16,10 +16,7 @@ pub fn create_dev_room_core_scene(mut commands: Commands) {
     });
 }
 
-pub fn create_dev_room_scene(
-    mut commands: Commands,
-    card_assets: Res<CardAssets>
-) {
+pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets>) {
     let board = commands.spawn((Board::default(), LevelEntity)).id();
 
     commands.spawn((
@@ -44,12 +41,12 @@ pub fn create_dev_room_scene(
             OnBoard(board),
             OnField,
             TransformBundle::default(),
-            Player(0)
+            Player(0),
         )),
         &CardId(0),
     );
 
-    for i in 0..10 {
+    for i in 0..40 {
         card_assets.insert_card_render(
             &mut commands.spawn((
                 CardBundle {
@@ -59,7 +56,7 @@ pub fn create_dev_room_scene(
                 OnBoard(board),
                 OnHand,
                 TransformBundle::default(),
-                Player(0)
+                Player(0),
             )),
             &CardId(0),
         );

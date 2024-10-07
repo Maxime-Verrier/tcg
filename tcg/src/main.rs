@@ -1,6 +1,14 @@
 pub use bevy::prelude::*;
-use bevy::{window::PrimaryWindow, winit::{UpdateMode, WinitSettings}};
-use bevy_inspector_egui::{bevy_egui::{EguiContext, EguiPlugin}, egui, quick::WorldInspectorPlugin, DefaultInspectorConfigPlugin};
+use bevy::{
+    window::PrimaryWindow,
+    winit::{UpdateMode, WinitSettings},
+};
+use bevy_inspector_egui::{
+    bevy_egui::{EguiContext, EguiPlugin},
+    egui,
+    quick::WorldInspectorPlugin,
+    DefaultInspectorConfigPlugin,
+};
 use card::{CardPlugin, OnCardAddedOnHand};
 use epithet::net::NetPlugins;
 use state::state_plugin;
@@ -31,7 +39,6 @@ fn main() {
         unfocused_mode: UpdateMode::Continuous,
     });
 }
-
 
 fn inspector_ui(world: &mut World) {
     let Ok(egui_context) = world

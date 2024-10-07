@@ -1,17 +1,19 @@
-use bevy::{ecs::component::{ComponentHooks, StorageType}, prelude::*, utils::warn};
+use bevy::{
+    ecs::component::{ComponentHooks, StorageType},
+    prelude::*,
+    utils::warn,
+};
 
 use crate::{Board, Card, OnBoard, Player, CARD_WIDTH};
 
 #[derive(Event)]
 pub struct OnCardAddedOnHand {
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
 }
 
 impl OnCardAddedOnHand {
     pub fn new(entities: Vec<Entity>) -> Self {
-        Self {
-            entities
-        }
+        Self { entities }
     }
 }
 
@@ -23,33 +25,39 @@ impl Component for OnHand {
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_add(|mut world, entity, _component_id| {
-			let board_entity = world.get::<OnBoard>(entity).cloned();
-			let player = world.get::<Player>(entity).cloned();
+            let board_entity = world.get::<OnBoard>(entity).cloned();
+            let player = world.get::<Player>(entity).cloned();
 
-			if let Some(board_entity) = board_entity {
-				if let Some(mut board) = world.get_mut::<Board>(board_entity.0){
-					if let Some(player) = player {
-						board.insert_by_hand(player.0, entity);
-					}
-				}
-			}
-		});
+            if let Some(board_entity) = board_entity {
+                if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
+                    if let Some(player) = player {
+                        board.insert_by_hand(player.0, entity);
+                    }
+                }
+            }
+        });
         hooks.on_remove(|mut world, entity, _component_id| {
-			let board_entity = world.get::<OnBoard>(entity).cloned();
-			let player = world.get::<Player>(entity).cloned();
+            let board_entity = world.get::<OnBoard>(entity).cloned();
+            let player = world.get::<Player>(entity).cloned();
 
-			if let Some(board_entity) = board_entity {
-				if let Some(mut board) = world.get_mut::<Board>(board_entity.0){
-					if let Some(player) = player {
-						board.remove_hand(player.0, &entity);
-					}
-				}
-			}
-		});
-	}
+            if let Some(board_entity) = board_entity {
+                if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
+                    if let Some(player) = player {
+                        board.remove_hand(player.0, &entity);
+                    }
+                }
+            }
+        });
+    }
 }
 
-pub(crate) fn added_on_hand_observer(trigger: Trigger<OnAdd, OnHand>, mut commands: Commands, cards_on_hands: Query<(&OnBoard, &Player), (With<OnHand>, With<Card>)>, boards: Query<&Board>, cameras: Query<&Transform, With<Camera>>) {
+pub(crate) fn added_on_hand_observer(
+    trigger: Trigger<OnAdd, OnHand>,
+    mut commands: Commands,
+    cards_on_hands: Query<(&OnBoard, &Player), (With<OnHand>, With<Card>)>,
+    boards: Query<&Board>,
+    cameras: Query<&Transform, With<Camera>>,
+) {
     if let Ok((on_board, player)) = cards_on_hands.get(trigger.entity()) {
         if let Ok(board) = boards.get(on_board.0) {
             if let Some(hand) = board.get_by_hand(player.0) {
@@ -69,20 +77,20 @@ pub(crate) fn added_on_hand_observer(trigger: Trigger<OnAdd, OnHand>, mut comman
                     let y = ((angle + 90.0).abs()).to_radians().sin() * radius - radius;
 
                     if let Some(mut card_entity) = commands.get_entity(*card) {
-                        let test = Vec3::new(x, 0.0, -y);
                         let mut transform = hand_pos.clone();
 
-                        transform.translation += test;
+                        transform.translation += hand_pos.right() * x + hand_pos.up() * y;
                         transform.translation += hand_pos.back() * 0.0001 * i as f32;
-                        transform.rotation *= Quat::from_rotation_z(-angle.to_radians());
+                        transform.rotation *= Quat::from_rotation_z(angle.to_radians());
                         card_entity.insert(TransformBundle {
-                            local: transform, //with_rotation(Quat::from_rotation_z(angle.to_radians()))
+                            local: transform,
                             ..default()
                         });
                         i = i + 1;
-                    }
-                    else {
-                        warn!("hand_observer got a non existent card entity from the board loookup");
+                    } else {
+                        warn!(
+                            "hand_observer got a non existent card entity from the board loookup"
+                        );
                     }
                 }
             }

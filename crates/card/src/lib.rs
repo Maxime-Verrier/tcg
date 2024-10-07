@@ -1,18 +1,24 @@
-mod card;
 mod board;
-mod render;
-mod query;
-mod hand;
+mod card;
 mod deck;
+mod hand;
+mod query;
+mod render;
 
-pub use card::*;
 pub use board::*;
-pub use render::*;
-pub use query::*;
-pub use hand::*;
+pub use card::*;
 pub use deck::*;
+pub use hand::*;
+pub use query::*;
+pub use render::*;
 
-use bevy::{app::{Plugin, Startup}, asset::{AssetServer, Assets}, math::{Vec2, Vec3}, pbr::StandardMaterial, prelude::{default, Mesh, Plane3d, Res, ResMut}};
+use bevy::{
+    app::{Plugin, Startup},
+    asset::{AssetServer, Assets},
+    math::{Vec2, Vec3},
+    pbr::StandardMaterial,
+    prelude::{default, Mesh, Plane3d, Res, ResMut},
+};
 
 pub struct CardPlugin;
 
@@ -26,8 +32,16 @@ impl Plugin for CardPlugin {
     }
 }
 
-fn setup(mut card_assets: ResMut<CardAssets>, mut meshes: ResMut<Assets<Mesh>>, mut mats: ResMut<Assets<StandardMaterial>>, assets: Res<AssetServer>) {
-    card_assets.face_mesh = meshes.add(Plane3d::new(Vec3::Z, Vec2::new(CARD_WIDTH/2.0, CARD_HEIGHT/2.0)));
+fn setup(
+    mut card_assets: ResMut<CardAssets>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut mats: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
+) {
+    card_assets.face_mesh = meshes.add(Plane3d::new(
+        Vec3::Z,
+        Vec2::new(CARD_WIDTH / 2.0, CARD_HEIGHT / 2.0),
+    ));
     card_assets.back_material = mats.add(StandardMaterial {
         base_color_texture: Some(assets.load("cards/art.png")),
         unlit: true,
@@ -39,9 +53,12 @@ fn setup(mut card_assets: ResMut<CardAssets>, mut meshes: ResMut<Assets<Mesh>>, 
         unlit: true,
         ..default()
     });
-    card_assets.insert_art(CardId(0), mats.add(StandardMaterial {
-        base_color_texture: Some(assets.load("cards/art3.png")),
-        unlit: true,
-        ..default()
-    }));
+    card_assets.insert_art(
+        CardId(0),
+        mats.add(StandardMaterial {
+            base_color_texture: Some(assets.load("cards/art3.png")),
+            unlit: true,
+            ..default()
+        }),
+    );
 }
