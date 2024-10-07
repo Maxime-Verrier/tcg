@@ -42,14 +42,14 @@ pub(crate) fn added_on_hand_observer(trigger: Trigger<OnInsert, OnHand>, mut com
             if let Some(hand) = board.get_by_hand(player.0) {
                 let len = hand.len();
 
-                let radius = CARD_WIDTH * 7.0;
-                let angle_offset = -10.0; // degree
+                let radius = CARD_WIDTH * 36.0;
+                let angle_offset = -2.5; // degree
                 let mut i = 0;
 
                 for card in hand.iter() {
                     let angle = angle_offset * (i as f32 - ((len - 1) as f32 / 2.0));
                     let x = (angle + 90.0).to_radians().cos() * radius;
-                    let z = ((angle + 90.0).abs()).to_radians().sin() * -radius + radius;
+                    let z = ((angle + 90.0).abs()).to_radians().sin() * -radius + radius + 0.36;
 
                     if let Some(mut card_entity) = commands.get_entity(*card) {
                         card_entity.insert(TransformBundle {

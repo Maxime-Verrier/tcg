@@ -49,7 +49,7 @@ pub fn create_dev_room_scene(
         &CardId(0),
     );
 
-    for i in 0..5 {
+    for i in 0..40 {
         card_assets.insert_card_render(
             &mut commands.spawn((
                 CardBundle {
