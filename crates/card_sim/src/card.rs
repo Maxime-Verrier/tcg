@@ -1,22 +1,16 @@
 use bevy::{
     asset::Handle,
     core::Name,
-    ecs::{
-        component::{ComponentHooks, StorageType},
-        query,
-        system::{EntityCommand, EntityCommands},
-    },
-    math::{IVec2, Quat},
+    ecs::system::EntityCommands,
+    math::Quat,
     pbr::{PbrBundle, StandardMaterial},
     prelude::{
-        default, BuildChildren, Bundle, Component, GlobalTransform, InheritedVisibility, Mesh,
-        Plane3d, QueryState, Resource, Transform, ViewVisibility, Visibility,
+        default, BuildChildren, Bundle, Component, InheritedVisibility, Mesh, Resource, Transform,
+        ViewVisibility, Visibility,
     },
     utils::HashMap,
 };
 use epithet::utils::LevelEntity;
-
-use crate::OnBoard;
 
 pub const CARD_WIDTH: f32 = 0.063;
 pub const CARD_HEIGHT: f32 = 0.088;
@@ -49,6 +43,8 @@ impl Default for CardBundle {
         }
     }
 }
+
+#[cfg(feature = "render")]
 #[derive(Resource, Default)]
 pub struct CardAssets {
     pub face_mesh: Handle<Mesh>,
@@ -58,6 +54,7 @@ pub struct CardAssets {
     arts: HashMap<CardId, Handle<StandardMaterial>>,
 }
 
+#[cfg(feature = "render")]
 impl CardAssets {
     pub fn new(
         face_mesh: Handle<Mesh>,
@@ -74,10 +71,12 @@ impl CardAssets {
         }
     }
 
+    #[cfg(feature = "render")]
     pub fn insert_art(&mut self, id: CardId, material: Handle<StandardMaterial>) {
         self.arts.insert(id, material);
     }
 
+    #[cfg(feature = "render")]
     pub fn insert_card_render(&self, commands: &mut EntityCommands, id: &CardId) {
         commands.with_children(|parent| {
             parent

@@ -1,6 +1,19 @@
+use action::{Action, ActionExecuteEvent, ActionState};
+use bevy::log::Level;
 pub use bevy::prelude::*;
-use card::{Board, Card, CardAssets, CardBundle, CardId, OnBoard, OnField, OnHand, Player};
-use epithet::utils::LevelEntity;
+use bevy_mod_picking::{
+    events::{Click, Pointer},
+    prelude::{Listener, On}, PickableBundle,
+};
+use card_sim::{
+    AgentOwned, Board, BoardSlot, Card, CardAssets, CardBundle, CardId, FieldPosition, OnBoard,
+    OnField, OnHand,
+};
+use epithet::{agent::Agent, utils::LevelEntity};
+
+use crate::card::{
+    self, summon_action_cancel, summon_action_execute, summon_action_finish, SummonActionResource,
+};
 
 pub fn create_dev_room_core_scene(mut commands: Commands) {
     commands.spawn((
@@ -18,7 +31,17 @@ pub fn create_dev_room_core_scene(mut commands: Commands) {
 
 pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets>) {
     let board = commands.spawn((Board::default(), LevelEntity)).id();
+    let agent = commands
+        .spawn((Agent, LevelEntity, ActionState::default()))
+        .id();
 
+    commands.spawn((
+        SpatialBundle::default(),
+        BoardSlot(None),
+        LevelEntity,
+        FieldPosition::new(0, 0, 0),
+        OnBoard(board),
+    ));
     commands.spawn((
         PbrBundle {
             mesh: card_assets.deck_mesh.clone(),
@@ -29,24 +52,10 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
         Name::new("Deck".to_string()),
         LevelEntity,
         OnBoard(board),
-        Player(0),
+        AgentOwned(agent),
     ));
 
-    card_assets.insert_card_render(
-        &mut commands.spawn((
-            CardBundle {
-                card: Card(CardId(0)),
-                ..default()
-            },
-            OnBoard(board),
-            OnField,
-            TransformBundle::default(),
-            Player(0),
-        )),
-        &CardId(0),
-    );
-
-    for i in 0..40 {
+    for _ in 0..1 {
         card_assets.insert_card_render(
             &mut commands.spawn((
                 CardBundle {
@@ -55,8 +64,22 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
                 },
                 OnBoard(board),
                 OnHand,
-                TransformBundle::default(),
-                Player(0),
+                AgentOwned(agent),
+                On::<Pointer<Click>>::run(
+                    |event: Listener<Pointer<Click>>,
+                     mut commands: Commands,
+                     actionners: Query<Entity, With<ActionState>>,
+                     cards: Query<Entity, With<Card>>,
+                     summon_resources: Res<SummonActionResource>| {
+                        commands.trigger(ActionExecuteEvent(Action::new(
+                            actionners.get_single().unwrap(),
+                            vec![event.listener()],
+                            summon_resources.execute_id,
+                            summon_resources.finish_id,
+                            Some(summon_resources.cancel_id),
+                        )));
+                    },
+                ),
             )),
             &CardId(0),
         );

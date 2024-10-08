@@ -5,13 +5,13 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-epithet = { workspace = true }
-card = { workspace = true }
-bevy-inspector-egui = "0.26.0"
+bevy-inspector-egui = { workspace = true }
+bevy_mod_picking = { workspace = true }
 
-[dev-dependencies]
-bevy = { workspace = true }
+epithet = { workspace = true }
+card_sim = { workspace = true }
+action = { workspace = true }
 
 [features]
 default = ["render"]
-render = ["card/render"]
+render = ["card_sim/render"]

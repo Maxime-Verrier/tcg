@@ -1,9 +1,12 @@
 [workspace]
-members = ["crates/card", "tcg"]
+members = ["crates/*", "tcg"]
 resolver = "2"
 
 [workspace.dependencies]
 bevy = { version = "0.14.2" }
-epithet = { path = "./crates/epithet" }
-card = { path = "./crates/card" }
+bevy_mod_picking = "0.20.1"
 bevy-inspector-egui = "0.26.0"
+
+epithet = { path = "./crates/epithet" }
+card_sim = { path = "./crates/card_sim" }
+action = { path = "./crates/action" }

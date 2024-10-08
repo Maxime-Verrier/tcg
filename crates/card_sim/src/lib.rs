@@ -1,16 +1,20 @@
 mod board;
 mod card;
 mod deck;
+mod field;
 mod hand;
 mod query;
 mod render;
+mod slot;
 
 pub use board::*;
 pub use card::*;
 pub use deck::*;
+pub use field::*;
 pub use hand::*;
 pub use query::*;
 pub use render::*;
+pub use slot::*;
 
 use bevy::{
     app::{Plugin, Startup},
@@ -24,14 +28,19 @@ pub struct CardPlugin;
 
 impl Plugin for CardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_resource::<CardAssets>();
-        app.add_event::<OnCardAddedOnHand>();
+        app.observe(board_agent_removed_observer);
 
-        app.add_systems(Startup, setup);
-        app.observe(added_on_hand_observer);
+        #[cfg(feature = "render")]
+        {
+            app.init_resource::<CardAssets>();
+            app.add_event::<OnCardAddedOnHand>();
+            app.add_systems(Startup, setup);
+            app.observe(added_on_hand_observer);
+        }
     }
 }
 
+#[cfg(feature = "render")]
 fn setup(
     mut card_assets: ResMut<CardAssets>,
     mut meshes: ResMut<Assets<Mesh>>,

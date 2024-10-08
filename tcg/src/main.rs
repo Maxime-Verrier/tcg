@@ -1,3 +1,4 @@
+use action::ActionPlugin;
 pub use bevy::prelude::*;
 use bevy::{
     window::PrimaryWindow,
@@ -5,16 +6,16 @@ use bevy::{
 };
 use bevy_inspector_egui::{
     bevy_egui::{EguiContext, EguiPlugin},
-    egui,
-    quick::WorldInspectorPlugin,
-    DefaultInspectorConfigPlugin,
+    egui, DefaultInspectorConfigPlugin,
 };
-use card::{CardPlugin, OnCardAddedOnHand};
+use bevy_mod_picking::DefaultPickingPlugins;
+use card::card_plugin;
+use card_sim::{CardPlugin, OnCardAddedOnHand};
 use epithet::net::NetPlugins;
 use state::state_plugin;
 use ui::ui_plugin;
 
-mod cards;
+mod card;
 mod scene;
 mod state;
 mod ui;
@@ -26,10 +27,13 @@ fn main() {
         DefaultPlugins,
         DefaultInspectorConfigPlugin,
         EguiPlugin,
+        DefaultPickingPlugins,
         NetPlugins,
         CardPlugin,
+        ActionPlugin,
         state_plugin,
         ui_plugin,
+        card_plugin,
     ))
     .add_systems(Update, inspector_ui)
     .run();

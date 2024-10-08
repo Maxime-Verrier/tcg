@@ -1,5 +1,5 @@
 [package]
-name = "card"
+name = "card_sim"
 version = "0.1.0"
 edition = "2021"
 

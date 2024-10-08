@@ -1,10 +1,9 @@
 use bevy::{
     ecs::component::{ComponentHooks, StorageType},
     prelude::*,
-    utils::warn,
 };
 
-use crate::{Board, Card, OnBoard, Player, CARD_WIDTH};
+use crate::{AgentOwned, Board, Card, OnBoard, CARD_WIDTH};
 
 #[derive(Event)]
 pub struct OnCardAddedOnHand {
@@ -26,7 +25,7 @@ impl Component for OnHand {
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_add(|mut world, entity, _component_id| {
             let board_entity = world.get::<OnBoard>(entity).cloned();
-            let player = world.get::<Player>(entity).cloned();
+            let player = world.get::<AgentOwned>(entity).cloned();
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
@@ -38,7 +37,7 @@ impl Component for OnHand {
         });
         hooks.on_remove(|mut world, entity, _component_id| {
             let board_entity = world.get::<OnBoard>(entity).cloned();
-            let player = world.get::<Player>(entity).cloned();
+            let player = world.get::<AgentOwned>(entity).cloned();
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
@@ -51,10 +50,11 @@ impl Component for OnHand {
     }
 }
 
+#[cfg(feature = "render")]
 pub(crate) fn added_on_hand_observer(
     trigger: Trigger<OnAdd, OnHand>,
     mut commands: Commands,
-    cards_on_hands: Query<(&OnBoard, &Player), (With<OnHand>, With<Card>)>,
+    cards_on_hands: Query<(&OnBoard, &AgentOwned), (With<OnHand>, With<Card>)>,
     boards: Query<&Board>,
     cameras: Query<&Transform, With<Camera>>,
 ) {
@@ -77,7 +77,7 @@ pub(crate) fn added_on_hand_observer(
                     let y = ((angle + 90.0).abs()).to_radians().sin() * radius - radius;
 
                     if let Some(mut card_entity) = commands.get_entity(*card) {
-                        let mut transform = hand_pos.clone();
+                        let mut transform = hand_pos;
 
                         transform.translation += hand_pos.right() * x + hand_pos.up() * y;
                         transform.translation += hand_pos.back() * 0.0001 * i as f32;
@@ -86,7 +86,7 @@ pub(crate) fn added_on_hand_observer(
                             local: transform,
                             ..default()
                         });
-                        i = i + 1;
+                        i += 1;
                     } else {
                         warn!(
                             "hand_observer got a non existent card entity from the board loookup"
