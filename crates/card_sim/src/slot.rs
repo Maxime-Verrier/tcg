@@ -1,9 +1,12 @@
-use bevy::ecs::{component::{ComponentHooks, StorageType}, entity::MapEntities};
+use bevy::ecs::{
+    component::{ComponentHooks, StorageType},
+    entity::MapEntities,
+};
 pub use bevy::prelude::*;
 use epithet::utils::LevelEntity;
 use serde::{Deserialize, Serialize};
 
-use crate::{AgentOwned, Board, OnBoard, OnField};
+use crate::{Board, OnBoard, OnField};
 
 #[derive(Bundle)]
 pub struct CardSlotBundle {
@@ -72,7 +75,7 @@ impl Component for OnSlot {
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_insert(|mut world, entity, _component_id| {
-            if let (Some(on_board), Some(mut on_slot), Some(slot)) = (
+            if let (Some(on_board), Some(on_slot), Some(slot)) = (
                 world.get::<OnBoard>(entity).cloned(), // TODO get mut when there will no need to clone anymore with future bevy update
                 world.get::<OnSlot>(entity).cloned(),
                 world.get::<BoardSlot>(entity).cloned(),
@@ -94,7 +97,7 @@ impl Component for OnSlot {
         });
 
         hooks.on_remove(|mut world, entity, _component_id| {
-            if let (Some(on_board), Some(mut on_slot), Some(slot)) = (
+            if let (Some(on_board), Some(on_slot), Some(slot)) = (
                 world.get::<OnBoard>(entity).cloned(),
                 world.get::<OnSlot>(entity).cloned(),
                 world.get::<BoardSlot>(entity).cloned(),

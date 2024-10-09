@@ -2,7 +2,7 @@ use bevy::ecs::entity::MapEntities;
 pub use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{Board, BoardSlot, OnField, OnHand, OnSlot};
+use crate::{Board, BoardSlot, OnHand, OnSlot};
 
 //TODO add controller interdediate as this is a trust the client event
 #[derive(Event, Clone, Serialize, Deserialize, Debug)]

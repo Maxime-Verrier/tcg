@@ -1,5 +1,4 @@
 use bevy::prelude::Entity;
-use serde::{Deserialize, Serialize};
 use synctree::{Node, NodeArena};
 
 #[derive(Debug)]

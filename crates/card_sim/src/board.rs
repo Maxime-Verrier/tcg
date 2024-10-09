@@ -1,5 +1,11 @@
 use bevy::{
-    ecs::{component::{ComponentHooks, StorageType}, entity::MapEntities}, math::IVec3, prelude::{Component, Entity, EntityMapper, OnRemove, Query, Trigger}, scene::ron::Map, utils::{hashbrown::HashSet, HashMap}
+    ecs::{
+        component::{ComponentHooks, StorageType},
+        entity::MapEntities,
+    },
+    math::IVec3,
+    prelude::{Component, Entity, EntityMapper, OnRemove, Query, Trigger},
+    utils::{hashbrown::HashSet, HashMap},
 };
 use epithet::agent::Agent;
 use serde::{Deserialize, Serialize};

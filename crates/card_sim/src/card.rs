@@ -29,7 +29,7 @@ pub struct CardBundle {
     pub view_visibility: ViewVisibility,
     pub level_entity: LevelEntity,
     pub name: Name,
-    pub replicate: Replicated
+    pub replicate: Replicated,
 }
 
 impl Default for CardBundle {

@@ -57,9 +57,10 @@ pub fn summon_action_execute(
                 .entity(*slot.1)
                 .insert((On::<Pointer<Click>>::run(
                     |event: Listener<Pointer<Click>>,
-                    mut commands: Commands,
-                    actionners: Query<Entity, With<ActionState>>| {
-                        commands.trigger_targets(ActionFinishEvent, actionners.get_single().unwrap());
+                     mut commands: Commands,
+                     actionners: Query<Entity, With<ActionState>>| {
+                        commands
+                            .trigger_targets(ActionFinishEvent, actionners.get_single().unwrap());
                     },
                 ),))
                 .with_children(|parent| {
@@ -68,11 +69,7 @@ pub fn summon_action_execute(
                         ..default()
                     });
                 });
-            summon_packet_writer.send(AgentSummonEvent::new(
-                board_entity,
-                summon_entity,
-                *slot.1,
-            ));
+            summon_packet_writer.send(AgentSummonEvent::new(board_entity, summon_entity, *slot.1));
         }
     }
     //TODO slot check to avoid soft lock
@@ -95,7 +92,9 @@ pub fn summon_action_finish(
 
     let summon_entity = action_input.entities[0];
 
-    if let Ok((slot_entity, slot_transform)) = slots.get_single() /*TODO OMG just fix this already */ {
+    if let Ok((slot_entity, slot_transform)) = slots.get_single()
+    /*TODO OMG just fix this already */
+    {
         commands.entity(slot_entity).despawn_descendants(); //TODO remove when better fx cause just removing childrens is dumb and can have sideffect
         if let Ok(mut summon_transform) = transforms.get_mut(summon_entity) {
             if let Some(mut entity) = commands.get_entity(summon_entity) {

@@ -1,10 +1,8 @@
 use action::{Action, ActionExecuteEvent, ActionState};
-use bevy::log::Level;
 pub use bevy::prelude::*;
 use bevy_mod_picking::{
     events::{Click, Pointer},
     prelude::{Listener, On},
-    PickableBundle,
 };
 use bevy_replicon::core::Replicated;
 use card_sim::{
@@ -13,7 +11,7 @@ use card_sim::{
 use epithet::{agent::Agent, utils::LevelEntity};
 
 use crate::card::{
-    self, summon_action_cancel, summon_action_execute, summon_action_finish, SummonActionResource,
+    SummonActionResource,
 };
 
 pub fn create_dev_room_core_scene(mut commands: Commands) {
@@ -34,7 +32,14 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
     let agent = commands
         .spawn((Agent, LevelEntity, ActionState::default(), Replicated))
         .id();
-    let board = commands.spawn((Board::new(vec![agent]), Replicated, LevelEntity, Name::new("Board"))).id();
+    let board = commands
+        .spawn((
+            Board::new(vec![agent]),
+            Replicated,
+            LevelEntity,
+            Name::new("Board"),
+        ))
+        .id();
     let slot = commands
         .spawn((
             SpatialBundle::default(),

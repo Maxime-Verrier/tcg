@@ -1,7 +1,4 @@
-use bevy::{
-    math::{IVec2, IVec3},
-    prelude::Query,
-};
+use bevy::math::IVec3;
 
 use crate::{AgentOwned, Board};
 

@@ -19,7 +19,6 @@ pub use effect::*;
 pub use field::*;
 pub use hand::*;
 pub use query::*;
-pub use render::*;
 pub use slot::*;
 pub use tree::*;
 

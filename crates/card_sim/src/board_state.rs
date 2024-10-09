@@ -2,7 +2,7 @@ use bevy::ecs::entity::MapEntities;
 pub use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{Board, Effect, EffectEvent, Tree};
+use crate::{Board, EffectEvent, Tree};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BoardState {
