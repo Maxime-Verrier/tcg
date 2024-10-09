@@ -2,21 +2,11 @@ use bevy::{
     ecs::component::{ComponentHooks, StorageType},
     prelude::*,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{AgentOwned, Board, Card, OnBoard, CARD_WIDTH};
 
-#[derive(Event)]
-pub struct OnCardAddedOnHand {
-    pub entities: Vec<Entity>,
-}
-
-impl OnCardAddedOnHand {
-    pub fn new(entities: Vec<Entity>) -> Self {
-        Self { entities }
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct OnHand;
 
 impl Component for OnHand {
@@ -30,7 +20,7 @@ impl Component for OnHand {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(player) = player {
-                        board.insert_by_hand(player.0, entity);
+                        board.insert_on_hand(player.0, entity);
                     }
                 }
             }
@@ -42,7 +32,7 @@ impl Component for OnHand {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(player) = player {
-                        board.remove_hand(player.0, &entity);
+                        board.remove_from_hand(player.0, &entity);
                     }
                 }
             }

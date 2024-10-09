@@ -10,6 +10,7 @@ use bevy::{
     },
     utils::HashMap,
 };
+use bevy_replicon::core::Replicated;
 use epithet::utils::LevelEntity;
 
 pub const CARD_WIDTH: f32 = 0.063;
@@ -20,7 +21,6 @@ pub struct CardId(pub u32);
 
 #[derive(Component, Default)]
 pub struct Card(pub CardId);
-
 #[derive(Bundle)]
 pub struct CardBundle {
     pub card: Card,
@@ -29,6 +29,7 @@ pub struct CardBundle {
     pub view_visibility: ViewVisibility,
     pub level_entity: LevelEntity,
     pub name: Name,
+    pub replicate: Replicated
 }
 
 impl Default for CardBundle {
@@ -40,6 +41,7 @@ impl Default for CardBundle {
             inherited_visibility: InheritedVisibility::default(),
             view_visibility: ViewVisibility::default(),
             level_entity: LevelEntity,
+            replicate: Replicated,
         }
     }
 }
@@ -71,12 +73,10 @@ impl CardAssets {
         }
     }
 
-    #[cfg(feature = "render")]
     pub fn insert_art(&mut self, id: CardId, material: Handle<StandardMaterial>) {
         self.arts.insert(id, material);
     }
 
-    #[cfg(feature = "render")]
     pub fn insert_card_render(&self, commands: &mut EntityCommands, id: &CardId) {
         commands.with_children(|parent| {
             parent

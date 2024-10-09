@@ -1,39 +1,54 @@
+pub mod agent_action;
 mod board;
+mod board_state;
 mod card;
 mod deck;
+mod effect;
 mod field;
 mod hand;
 mod query;
 mod render;
 mod slot;
+mod tree;
 
 pub use board::*;
+pub use board_state::*;
 pub use card::*;
 pub use deck::*;
+pub use effect::*;
 pub use field::*;
 pub use hand::*;
 pub use query::*;
 pub use render::*;
 pub use slot::*;
+pub use tree::*;
 
-use bevy::{
-    app::{Plugin, Startup},
-    asset::{AssetServer, Assets},
-    math::{Vec2, Vec3},
-    pbr::StandardMaterial,
-    prelude::{default, Mesh, Plane3d, Res, ResMut},
-};
+use agent_action::{summon_packet_system, AgentSummonEvent};
+use bevy_replicon::prelude::{AppRuleExt, ChannelKind, ClientEventAppExt};
+use epithet::net::NetState;
 
 pub struct CardPlugin;
 
 impl Plugin for CardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.replicate::<Board>();
+        app.replicate::<OnHand>();
+        app.replicate::<OnField>();
+        app.replicate::<AgentOwned>();
+        app.replicate::<OnSlot>();
+        app.replicate::<BoardSlot>();
+
+        app.add_mapped_client_event::<AgentSummonEvent>(ChannelKind::Ordered);
         app.observe(board_agent_removed_observer);
+
+        app.add_systems(
+            Update,
+            summon_packet_system.run_if(in_state(NetState::Server)),
+        );
 
         #[cfg(feature = "render")]
         {
             app.init_resource::<CardAssets>();
-            app.add_event::<OnCardAddedOnHand>();
             app.add_systems(Startup, setup);
             app.observe(added_on_hand_observer);
         }
@@ -66,6 +81,30 @@ fn setup(
         CardId(0),
         mats.add(StandardMaterial {
             base_color_texture: Some(assets.load("cards/art3.png")),
+            unlit: true,
+            ..default()
+        }),
+    );
+    card_assets.insert_art(
+        CardId(1),
+        mats.add(StandardMaterial {
+            base_color_texture: Some(assets.load("cards/art5.png")),
+            unlit: true,
+            ..default()
+        }),
+    );
+    card_assets.insert_art(
+        CardId(2),
+        mats.add(StandardMaterial {
+            base_color_texture: Some(assets.load("cards/art4.png")),
+            unlit: true,
+            ..default()
+        }),
+    );
+    card_assets.insert_art(
+        CardId(3),
+        mats.add(StandardMaterial {
+            base_color_texture: Some(assets.load("cards/art6.png")),
             unlit: true,
             ..default()
         }),

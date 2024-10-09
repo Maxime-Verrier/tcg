@@ -3,11 +3,12 @@ use bevy::log::Level;
 pub use bevy::prelude::*;
 use bevy_mod_picking::{
     events::{Click, Pointer},
-    prelude::{Listener, On}, PickableBundle,
+    prelude::{Listener, On},
+    PickableBundle,
 };
+use bevy_replicon::core::Replicated;
 use card_sim::{
-    AgentOwned, Board, BoardSlot, Card, CardAssets, CardBundle, CardId, FieldPosition, OnBoard,
-    OnField, OnHand,
+    AgentOwned, Board, BoardSlot, Card, CardAssets, CardBundle, CardId, OnBoard, OnField, OnHand,
 };
 use epithet::{agent::Agent, utils::LevelEntity};
 
@@ -30,18 +31,23 @@ pub fn create_dev_room_core_scene(mut commands: Commands) {
 }
 
 pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets>) {
-    let board = commands.spawn((Board::default(), LevelEntity)).id();
     let agent = commands
-        .spawn((Agent, LevelEntity, ActionState::default()))
+        .spawn((Agent, LevelEntity, ActionState::default(), Replicated))
+        .id();
+    let board = commands.spawn((Board::new(vec![agent]), Replicated, LevelEntity, Name::new("Board"))).id();
+    let slot = commands
+        .spawn((
+            SpatialBundle::default(),
+            BoardSlot(IVec3::new(0, 0, 0), None),
+            LevelEntity,
+            OnField,
+            OnBoard(board),
+            Replicated,
+            AgentOwned(agent),
+            Name::new("Slot"),
+        ))
         .id();
 
-    commands.spawn((
-        SpatialBundle::default(),
-        BoardSlot(None),
-        LevelEntity,
-        FieldPosition::new(0, 0, 0),
-        OnBoard(board),
-    ));
     commands.spawn((
         PbrBundle {
             mesh: card_assets.deck_mesh.clone(),
@@ -49,17 +55,17 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
             transform: Transform::from_xyz(0.5, 0.0, 0.0),
             ..default()
         },
-        Name::new("Deck".to_string()),
+        Name::new("Deck"),
         LevelEntity,
         OnBoard(board),
         AgentOwned(agent),
     ));
 
-    for _ in 0..1 {
+    for i in 0..4 {
         card_assets.insert_card_render(
             &mut commands.spawn((
                 CardBundle {
-                    card: Card(CardId(0)),
+                    card: Card(CardId(i)),
                     ..default()
                 },
                 OnBoard(board),
@@ -69,19 +75,21 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
                     |event: Listener<Pointer<Click>>,
                      mut commands: Commands,
                      actionners: Query<Entity, With<ActionState>>,
-                     cards: Query<Entity, With<Card>>,
+                     on_boards: Query<&OnBoard>,
                      summon_resources: Res<SummonActionResource>| {
-                        commands.trigger(ActionExecuteEvent(Action::new(
-                            actionners.get_single().unwrap(),
-                            vec![event.listener()],
-                            summon_resources.execute_id,
-                            summon_resources.finish_id,
-                            Some(summon_resources.cancel_id),
-                        )));
+                        if let Ok(on_board) = on_boards.get(event.listener()) {
+                            commands.trigger(ActionExecuteEvent(Action::new(
+                                actionners.get_single().unwrap(),
+                                vec![event.listener(), on_board.0],
+                                summon_resources.execute_id,
+                                summon_resources.finish_id,
+                                Some(summon_resources.cancel_id),
+                            )));
+                        }
                     },
                 ),
             )),
-            &CardId(0),
+            &CardId(i % 2),
         );
     }
 }

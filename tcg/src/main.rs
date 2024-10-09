@@ -10,7 +10,7 @@ use bevy_inspector_egui::{
 };
 use bevy_mod_picking::DefaultPickingPlugins;
 use card::card_plugin;
-use card_sim::{CardPlugin, OnCardAddedOnHand};
+use card_sim::CardPlugin;
 use epithet::net::NetPlugins;
 use state::state_plugin;
 use ui::ui_plugin;
@@ -56,8 +56,8 @@ fn inspector_ui(world: &mut World) {
     egui::Window::new("UI").show(egui_context.get_mut(), |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::CollapsingHeader::new("Game Debug").show(ui, |ui| {
-                if ui.add(egui::Button::new("Render Hand")).clicked() {
-                    world.send_event(OnCardAddedOnHand::new(vec![]));
+                if ui.add(egui::Button::new("Add Card")).clicked() {
+                    //TODO
                 }
             });
             egui::CollapsingHeader::new("Materials").show(ui, |ui| {

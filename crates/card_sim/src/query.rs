@@ -1,14 +1,16 @@
-use bevy::prelude::Query;
+use bevy::{
+    math::{IVec2, IVec3},
+    prelude::Query,
+};
 
-use crate::{AgentOwned, Board, FieldPosition};
+use crate::{AgentOwned, Board};
 
 pub enum BoardQueryLoc {
     All,
     Deck(AgentOwned),
     Hand(AgentOwned),
     Field,
-    CardSlot(FieldPosition),
-    Pos(FieldPosition),
+    OnSlot(IVec3),
 }
 
 pub struct BoardQuery;
@@ -31,13 +33,8 @@ impl BoardQuery {
                     }
                 }
                 BoardQueryLoc::Field => {}
-                BoardQueryLoc::Pos(pos) => {
-                    if let Some(entity) = board.get_by_pos(&pos) {
-                        entities.push(entity);
-                    }
-                }
-                BoardQueryLoc::CardSlot(pos) => {
-                    if let Some(entity) = board.get_by_slot(&pos) {
+                BoardQueryLoc::OnSlot(pos) => {
+                    if let Some(entity) = board.get_on_slot(&pos) {
                         entities.push(entity);
                     }
                 }
