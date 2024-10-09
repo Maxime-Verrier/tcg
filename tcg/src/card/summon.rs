@@ -1,110 +1,93 @@
-use action::{ActionFinishEvent, ActionInput, ActionState};
-use bevy::ecs::system::SystemId;
+use crate::action::ActionState;
 pub use bevy::prelude::*;
 use bevy_mod_picking::{
     events::{Click, Pointer},
     prelude::{Listener, On},
 };
 use card_sim::{agent_action::AgentSummonEvent, AgentOwned, Board};
-use card_sim::{BoardSlot, OnHand};
+use card_sim::BoardSlot;
 
-#[derive(Resource)]
-pub struct SummonActionResource {
-    pub execute_id: SystemId<ActionInput>,
-    pub cancel_id: SystemId<ActionInput>,
-    pub finish_id: SystemId<ActionInput>,
+
+#[derive(Event, Clone)]
+pub struct SummonActionEvent {
+    pub board_entity: Entity,
+    pub summon_entity: Entity,
 }
 
-pub fn summon_action_execute(
-    input: In<ActionInput>,
+impl SummonActionEvent {
+    pub fn new(board_entity: Entity, summon_entity: Entity) -> Self {
+        Self {
+            board_entity,
+            summon_entity,
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[derive(Component)]
+pub(crate) struct SummonActionFXMarker;
+
+pub(crate) fn summon_action_execute(
+    trigger: Trigger<SummonActionEvent>,
     mut commands: Commands,
     boards: Query<&Board>,
     slots_agents: Query<&AgentOwned, With<BoardSlot>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut summon_packet_writer: EventWriter<AgentSummonEvent>,
 ) {
-    let action_input = input.0;
+    let summon_event = trigger.event().clone();
 
-    if action_input.entities.len() < 2 {
-        error!("Invalid number of arguments in action summon input");
-        return;
-    }
-
-    let summon_entity = action_input.entities[0];
-    let board_entity = action_input.entities[1];
-
-    let board = match boards.get(board_entity) {
+    let board = match boards.get(summon_event.board_entity) {
         Ok(board) => board,
         Err(_) => {
             error!("No matching board entity found in the summon action input");
             return;
         }
     };
-
     for slot in board.get_slots() {
-        let slot_agent = match slots_agents.get(*slot.1) {
-            Ok(slot_agent) => slot_agent,
-            Err(_) => {
-                error!("No agent found in slot from board, this is a board state error, this should never happen, check the board invariants/observers/hooks");
-                continue;
-            }
-        };
-
         if true
         /*slot_agent.0 == client_agent*/ /* Modify when client know which agent he play */
         {
             commands
                 .entity(*slot.1)
-                .insert((On::<Pointer<Click>>::run(
-                    |event: Listener<Pointer<Click>>,
-                     mut commands: Commands,
-                     actionners: Query<Entity, With<ActionState>>| {
-                        commands
-                            .trigger_targets(ActionFinishEvent, actionners.get_single().unwrap());
+                .insert(On::<Pointer<Click>>::run(
+                    move |event: Listener<Pointer<Click>>,
+                          mut summon_packet_writer: EventWriter<AgentSummonEvent>,
+                          mut action_states: Query<&mut ActionState>,
+                          mut commands: Commands| {
+                        let mut action_state = action_states.single_mut(); //TODO change ? there should not be less/more than action_state anyway
+
+                        summon_packet_writer.send(AgentSummonEvent::new(
+                            summon_event.board_entity,
+                            summon_event.summon_entity,
+                            event.listener(),
+                        ));
+                        commands.trigger(SummonActionFinishEvent);
+                        action_state.current = None;
                     },
-                ),))
+                ))
                 .with_children(|parent| {
-                    parent.spawn(PbrBundle {
-                        mesh: meshes.add(Mesh::from(Cuboid::new(0.1, 0.1, 0.1))),
-                        ..default()
-                    });
+                    parent.spawn((
+                        PbrBundle {
+                            mesh: meshes.add(Mesh::from(Cuboid::new(0.1, 0.1, 0.1))),
+                            ..default()
+                        },
+                        SummonActionFXMarker,
+                    ));
                 });
-            summon_packet_writer.send(AgentSummonEvent::new(board_entity, summon_entity, *slot.1));
         }
     }
-    //TODO slot check to avoid soft lock
+    //TODO slot check to cancel the action ?
 }
 
-pub fn summon_action_cancel(input: In<ActionInput>) {}
+#[derive(Event, Clone)]
+pub struct SummonActionFinishEvent;
 
-pub fn summon_action_finish(
-    input: In<ActionInput>,
+pub(crate) fn summon_action_finish(
+    _trigger: Trigger<SummonActionFinishEvent>,
+    query: Query<Entity, With<SummonActionFXMarker>>,
     mut commands: Commands,
-    slots: Query<(Entity, &Transform), With<BoardSlot>>,
-    mut transforms: Query<&mut Transform, Without<BoardSlot>>,
 ) {
-    let action_input = input.0;
-
-    if action_input.entities.len() < 2 {
-        error!("Invalid number of arguments in action finish input");
-        return;
-    }
-
-    let summon_entity = action_input.entities[0];
-
-    if let Ok((slot_entity, slot_transform)) = slots.get_single()
-    /*TODO OMG just fix this already */
-    {
-        commands.entity(slot_entity).despawn_descendants(); //TODO remove when better fx cause just removing childrens is dumb and can have sideffect
-        if let Ok(mut summon_transform) = transforms.get_mut(summon_entity) {
-            if let Some(mut entity) = commands.get_entity(summon_entity) {
-                entity.remove::<(On<Pointer<Click>>, OnHand)>();
-                summon_transform.translation = slot_transform.translation;
-                summon_transform.rotation = Quat::from_rotation_x(90.0_f32.to_radians())
-                    * Quat::from_rotation_z(180.0_f32.to_radians());
-            }
-        }
-    } else {
-        error!("No single slot transform found");
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }

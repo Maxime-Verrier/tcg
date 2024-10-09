@@ -1,4 +1,3 @@
-use action::{Action, ActionExecuteEvent, ActionState};
 pub use bevy::prelude::*;
 use bevy_mod_picking::{
     events::{Click, Pointer},
@@ -10,8 +9,9 @@ use card_sim::{
 };
 use epithet::{agent::Agent, utils::LevelEntity};
 
-use crate::card::{
-    SummonActionResource,
+use crate::{
+    action::{Action, ActionState},
+    card::{SummonActionFinishEvent, SummonActionEvent},
 };
 
 pub fn create_dev_room_core_scene(mut commands: Commands) {
@@ -79,17 +79,19 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
                 On::<Pointer<Click>>::run(
                     |event: Listener<Pointer<Click>>,
                      mut commands: Commands,
-                     actionners: Query<Entity, With<ActionState>>,
-                     on_boards: Query<&OnBoard>,
-                     summon_resources: Res<SummonActionResource>| {
+                     mut action_states: Query<(&mut ActionState, Entity), With<Agent>>,
+                     on_boards: Query<&OnBoard>| {
                         if let Ok(on_board) = on_boards.get(event.listener()) {
-                            commands.trigger(ActionExecuteEvent(Action::new(
-                                actionners.get_single().unwrap(),
-                                vec![event.listener(), on_board.0],
-                                summon_resources.execute_id,
-                                summon_resources.finish_id,
-                                Some(summon_resources.cancel_id),
-                            )));
+                            let (mut action_state, self_agent) = action_states.single_mut(); //TODO replace with get self agent ??? there should be only one self action_state anyway
+
+                            action_state.execute_action(
+                                &mut commands,
+                                Action::new(
+                                    self_agent,
+                                    Box::new(SummonActionEvent::new(on_board.0, event.listener())),
+                                    Box::new(SummonActionFinishEvent),
+                                ),
+                            );
                         }
                     },
                 ),

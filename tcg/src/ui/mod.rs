@@ -1,6 +1,7 @@
 mod main_menu;
 
 use bevy::app::{App, Update};
+
 pub use main_menu::*;
 
 pub fn ui_plugin(app: &mut App) {

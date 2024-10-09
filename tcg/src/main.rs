@@ -1,4 +1,3 @@
-use action::ActionPlugin;
 pub use bevy::prelude::*;
 use bevy::{
     window::PrimaryWindow,
@@ -15,6 +14,7 @@ use epithet::net::NetPlugins;
 use state::state_plugin;
 use ui::ui_plugin;
 
+mod action;
 mod card;
 mod scene;
 mod state;
@@ -30,7 +30,6 @@ fn main() {
         DefaultPickingPlugins,
         NetPlugins,
         CardPlugin,
-        ActionPlugin,
         state_plugin,
         ui_plugin,
         card_plugin,

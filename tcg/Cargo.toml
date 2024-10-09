@@ -11,7 +11,6 @@ bevy_replicon = { workspace = true }
 
 epithet = { workspace = true }
 card_sim = { workspace = true }
-action = { workspace = true }
 
 [features]
 default = ["render"]

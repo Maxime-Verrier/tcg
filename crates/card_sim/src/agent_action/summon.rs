@@ -13,10 +13,10 @@ pub struct AgentSummonEvent {
 }
 
 impl AgentSummonEvent {
-    pub fn new(board_entity: Entity, card_entity: Entity, slot_entity: Entity) -> Self {
+    pub fn new(board_entity: Entity, summoned_entity: Entity, slot_entity: Entity) -> Self {
         Self {
             board_entity,
-            card_entity,
+            card_entity: summoned_entity,
             slot_entity,
         }
     }

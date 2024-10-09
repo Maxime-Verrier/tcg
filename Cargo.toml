@@ -11,4 +11,3 @@ serde = "1.0.210"
 
 epithet = { path = "./crates/epithet" }
 card_sim = { path = "./crates/card_sim" }
-action = { path = "./crates/action" }
