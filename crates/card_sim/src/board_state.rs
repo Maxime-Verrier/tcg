@@ -4,12 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Board, EffectEvent, Tree};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct BoardState {
     current_turn_agent: Entity,
     current_priority_agent: Entity,
 
     #[serde(skip)]
+    #[reflect(ignore)]
     tree: Option<Tree>,
 }
 

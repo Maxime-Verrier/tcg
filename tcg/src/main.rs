@@ -8,13 +8,15 @@ use bevy_inspector_egui::{
     egui, DefaultInspectorConfigPlugin,
 };
 use bevy_mod_picking::DefaultPickingPlugins;
+use bevy_replicon::prelude::AppRuleExt;
+use board::board_plugin;
 use card::card_plugin;
-use card_sim::CardPlugin;
-use epithet::net::NetPlugins;
+use card_sim::CardSimPlugin;
+use epithet::{net::NetPlugins, units::UnitPlugin};
 use state::state_plugin;
 use ui::ui_plugin;
 
-mod action;
+mod board;
 mod card;
 mod scene;
 mod state;
@@ -29,18 +31,25 @@ fn main() {
         EguiPlugin,
         DefaultPickingPlugins,
         NetPlugins,
-        CardPlugin,
+        UnitPlugin,
+        CardSimPlugin,
         state_plugin,
         ui_plugin,
         card_plugin,
+        board_plugin
     ))
-    .add_systems(Update, inspector_ui)
-    .run();
+    .add_systems(Update, inspector_ui);
 
     app.insert_resource(WinitSettings {
         focused_mode: UpdateMode::Continuous,
         unfocused_mode: UpdateMode::Continuous,
     });
+
+    app.replicate::<Name>();
+    app.replicate::<GlobalTransform>();
+    app.replicate::<Transform>();
+
+    app.run();
 }
 
 fn inspector_ui(world: &mut World) {

@@ -67,7 +67,7 @@ impl MapEntities for BoardSlot {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Reflect, Serialize, Deserialize, Clone)]
 pub struct OnSlot(pub Entity);
 
 impl Component for OnSlot {

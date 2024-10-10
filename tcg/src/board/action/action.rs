@@ -22,19 +22,16 @@ impl<T: Event + Clone> ActionEvent for T {
 }
 #[derive(Event)]
 pub struct Action {
-    self_agent: Entity, //TODO remove when possible,
     action_event: Box<dyn ActionEvent + 'static + Sync + Send>,
     cancel_event: Box<dyn ActionEvent + 'static + Sync + Send>,
 }
 
 impl Action {
     pub fn new(
-        self_agent: Entity,
         action_event: Box<dyn ActionEvent + 'static + Sync + Send>,
         cancel_event: Box<dyn ActionEvent + 'static + Sync + Send>,
     ) -> Self {
         Self {
-            self_agent,
             action_event,
             cancel_event,
         }

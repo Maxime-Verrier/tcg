@@ -2,12 +2,12 @@ use bevy::{
     ecs::{
         component::{ComponentHooks, StorageType},
         entity::MapEntities,
-    },
-    math::IVec3,
-    prelude::{Component, Entity, EntityMapper, OnRemove, Query, Trigger},
-    utils::{hashbrown::HashSet, HashMap},
+    }, math::IVec3, prelude::{Component, Entity, EntityMapper, Event, Observer, OnRemove, Query, Trigger}, reflect::Reflect, utils::{hashbrown::HashSet, HashMap}
 };
-use epithet::agent::Agent;
+use bevy::prelude::With;
+use bevy::prelude::Commands;
+
+use epithet::{agent::Agent, net::ClientReplicateWorld};
 use serde::{Deserialize, Serialize};
 
 use crate::{BoardSlot, BoardState, OnField, OnHand, OnSlot};
@@ -16,9 +16,15 @@ use crate::{BoardSlot, BoardState, OnField, OnHand, OnSlot};
 /// The reason for this lookup table exist is to reduce iteration when needing to get entities by x by value as we can't query entites just for x board/hand/player/etc..
 /// ex: entities on this board, entities at x pos of the board, cards of x player etc
 /// The lookup tables are automaticly synched internally when entites get their component removed/changed/added so no need to their values to the table
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct Board {
     state: BoardState,
+
+    /// The agent entity that this client is controlling
+    /// This is not replicated as each client will have their own agent entity
+    /// None if the client is not controlling any agent of this board
+    #[serde(skip)]
+    agent_owned: Option<Entity>,
 
     // Lookup maps
     #[serde(skip)]
@@ -30,8 +36,6 @@ pub struct Board {
     #[serde(skip)]
     on_hand_lookup: HashMap<Entity, HashSet<Entity>>,
 
-    /// List of entity on the board and a player lookup at the same time
-    /// Not using a Vec with no associate value as it's will be mean reallocating everything and iteration are rarer than insert/remove, even if it's doesnt rly matter at the frequency of a card game
     #[serde(skip)]
     on_board_lookup: HashSet<Entity>,
 
@@ -45,6 +49,7 @@ pub struct Board {
 impl Board {
     pub fn new(agents: Vec<Entity>) -> Self {
         Self {
+            agent_owned: None,
             state: BoardState::new(agents[0]),
             on_slot_lookup: HashMap::default(),
             on_field_lookup: HashSet::default(),
@@ -57,6 +62,17 @@ impl Board {
 
     pub fn trigger_effect(&mut self, card: Entity) {
         self.state.trigger_effect(card);
+    }
+
+    /// Clear all the lookup tables, this should not be called and is used to correctly set the lookup tables when a client is syncing with the server's world
+    /// This is needed as replication from server/client sync do not garantee the order of the component insert/remove and entities spawning
+    fn clear_lookup_tables(&mut self) {
+        self.slots_lookup.clear();
+        self.on_slot_lookup.clear();
+        self.on_hand_lookup.clear();
+        self.on_board_lookup.clear();
+        self.agent_lookup.clear();
+        self.on_field_lookup.clear();
     }
 
     // All the insert/remove functions that update the lookup table are private or pub(crate) cause the crate already automaticly call them when the component is added/removed
@@ -150,6 +166,9 @@ impl Component for Board {
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_add(|mut world, board_entity, _component_id| {
+            world.commands().entity(board_entity).insert(Observer::new(clean_lookup_on_world_replicate));
+        });
         hooks.on_remove(|mut world, board_entity, _component_id| {
             if let Some(field) = world.get::<Board>(board_entity) {
                 let entities: Vec<Entity> = field.on_board_lookup.iter().cloned().collect();
@@ -170,8 +189,47 @@ impl Component for Board {
     }
 }
 
+#[derive(Event)]
+/// Event that is triggered when the world is replicated and the board lookup tables recreated
+/// Used as world sync on connection do not recreate correctly the lookup tables
+pub struct BoardLookupCreated; //TODO create a resource for system that need correct lookup tables even before this happend to run in run conditions ?
+
+#[cfg(feature = "client")]
+pub(crate) fn clean_lookup_on_world_replicate(trigger: Trigger<ClientReplicateWorld>, commands: Commands, boards: Query<&mut Board>, entities: Query<(Entity, &OnBoard, Option<&OnHand>, Option<&BoardSlot>, Option<&OnField>, Option<&OnSlot>, Option<&AgentOwned>)>, slots: Query<&BoardSlot, With<OnBoard>>) {
+    return;
+    if let Ok(mut board) = boards.get_mut(trigger.entity()) {
+        board.clear_lookup_tables();
+
+        for (entity, on_board, on_hand, slot, on_field, on_slot, agent_owned) in entities.iter() {
+            if on_board.0 != trigger.entity() {
+                continue;
+            }
+            board.insert_on_board(entity);
+
+            if let Some(agent_owned) = agent_owned {
+                board.insert_by_agent(agent_owned.0, entity);
+                if on_hand.is_some() {
+                    board.insert_on_hand(agent_owned.0, entity);
+                }
+            }
+            if on_field.is_some() {
+                board.insert_on_field(entity);
+            }
+            if let Some(slot) = slot {
+                board.insert_slot(slot.0, entity);
+            }
+            if let Some(on_slot) = on_slot {
+                if let Ok(slot) = slots.get(on_slot.0) {
+                    board.insert_on_slot(slot.0, entity);
+                }
+            }
+        }
+    }
+    commands.trigger(BoardLookupCreated);
+}
+
 /// Mark the entity as part of x board and add the relevent entity's values to the lookup table
-#[derive(Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct OnBoard(pub Entity);
 
 impl Component for OnBoard {
@@ -255,21 +313,31 @@ impl Component for OnBoard {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+impl MapEntities for OnBoard {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
+        self.0 = entity_mapper.map_entity(self.0);
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct AgentOwned(pub Entity);
 
 impl Component for AgentOwned {
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.on_add(|mut world, entity, _component_id| {
+        hooks.on_insert(|mut world, entity, _component_id| {
             let board_entity = world.get::<OnBoard>(entity).cloned();
             let agent = world.get::<AgentOwned>(entity).cloned();
+            let on_hand = world.get::<OnHand>(entity).cloned();
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(agent) = agent {
                         board.insert_by_agent(agent.0, entity);
+                        if on_hand.is_some() {
+                            board.insert_on_hand(agent.0, entity);
+                        }
                     }
                 }
             }
@@ -278,11 +346,15 @@ impl Component for AgentOwned {
         hooks.on_remove(|mut world, entity, _component_id| {
             let board_entity = world.get::<OnBoard>(entity).cloned();
             let agent = world.get::<AgentOwned>(entity).cloned();
+            let on_hand = world.get::<OnHand>(entity).cloned();
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(agent) = agent {
                         board.remove_from_agent(agent.0, &entity);
+                        if on_hand.is_some() {
+                            board.remove_from_hand(agent.0, &entity);
+                        }
                     }
                 }
             }
@@ -298,6 +370,7 @@ impl MapEntities for AgentOwned {
 
 pub(crate) fn board_agent_removed_observer(
     //TODO do the same for slot ?
+    //TODO check if only one player and win/draw by default
     trigger: Trigger<OnRemove, Agent>,
     query: Query<&OnBoard>,
     mut boards: Query<&mut Board>,

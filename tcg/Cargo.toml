@@ -13,5 +13,6 @@ epithet = { workspace = true }
 card_sim = { workspace = true }
 
 [features]
-default = ["render"]
+default = ["render", "client"]
 render = ["card_sim/render"]
+client = []
