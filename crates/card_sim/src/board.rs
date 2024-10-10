@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use bevy::{
     ecs::{
         component::{ComponentHooks, StorageType},
@@ -33,8 +35,9 @@ pub struct Board {
     on_slot_lookup: HashMap<IVec3, Entity>,
 
     /// The key is the agent entity and the value is a set of entity on their hand
+    /// BTreeSet is used as the order of the cards in the hand is important
     #[serde(skip)]
-    on_hand_lookup: HashMap<Entity, HashSet<Entity>>,
+    on_hand_lookup: HashMap<Entity, BTreeSet<Entity>>,
 
     #[serde(skip)]
     on_board_lookup: HashSet<Entity>,
@@ -153,7 +156,7 @@ impl Board {
         self.agent_lookup.get(&agent)
     }
 
-    pub fn get_by_hand(&self, agent: Entity) -> Option<&HashSet<Entity>> {
+    pub fn get_by_hand(&self, agent: Entity) -> Option<&BTreeSet<Entity>> {
         self.on_hand_lookup.get(&agent)
     }
 
