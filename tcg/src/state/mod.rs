@@ -2,11 +2,13 @@ use bevy::{
     app::{App, Update},
     input::ButtonInput,
     prelude::{
-        in_state, AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter, OnExit, Res,
-        ResMut, States,
+        AppExtStates, IntoSystemConfigs, KeyCode, NextState, OnEnter, OnExit, Res, ResMut, States,
     },
 };
-use epithet::{net::NetState, utils::clean_scene};
+use epithet::{
+    net::NetState,
+    utils::{clean_scene, not_in_state},
+};
 
 use crate::{
     scene::{create_dev_room_core_scene, create_dev_room_scene},
@@ -32,9 +34,12 @@ pub fn state_plugin(app: &mut App) {
         OnEnter(AppState::Game),
         (
             create_dev_room_core_scene,
+            // Not using singeplayer_or_server because as net_state is not set yet the client is not connected yet
+            // TODO maybe change how we check as this could cause issue maybe ? only if we use a condition that can be true while client is not connected and we depend on it
+            // TODO rethink run conditions maybe, or just add it to systems that require it
             create_dev_room_scene
-                .after(create_dev_room_core_scene)
-                .run_if(in_state(NetState::Server)),
+                .run_if(not_in_state(NetState::Client))
+                .after(create_dev_room_core_scene),
         ),
     );
     app.add_systems(OnExit(AppState::Game), clean_scene);

@@ -1,9 +1,6 @@
 use bevy::{
     core::Name,
-    prelude::{
-        Bundle, Component, InheritedVisibility,
-        ViewVisibility, Visibility,
-    },
+    prelude::{Bundle, Component, InheritedVisibility, ViewVisibility, Visibility},
 };
 use bevy_replicon::core::Replicated;
 use epithet::utils::LevelEntity;

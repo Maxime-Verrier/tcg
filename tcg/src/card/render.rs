@@ -3,7 +3,12 @@ use std::collections::HashMap;
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use card_sim::{Card, CardId};
 
-pub fn create_card_render(card_entity: In<Entity>, mut commands: Commands, card_assets: Res<CardAssets>, cards: Query<(&Card, Option<&Transform>)>) {
+pub fn create_card_render(
+    card_entity: In<Entity>,
+    mut commands: Commands,
+    card_assets: Res<CardAssets>,
+    cards: Query<(&Card, Option<&Transform>)>,
+) {
     if let Ok((card, transform_flag)) = cards.get(card_entity.0) {
         let mut card_commands = commands.entity(card_entity.0);
 
@@ -11,8 +16,7 @@ pub fn create_card_render(card_entity: In<Entity>, mut commands: Commands, card_
             card_commands.insert(SpatialBundle::default());
         }
         card_assets.insert_card_render(&mut card_commands, &card.0);
-    }
-    else {
+    } else {
         error!("Could not create card render, the provided entity do not have a card component");
     }
 }

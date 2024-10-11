@@ -1,7 +1,18 @@
 pub use bevy::prelude::*;
-use card_sim::{AgentOwned, Board, Card, OnHand, OnBoard, CARD_WIDTH};
+use bevy_mod_picking::prelude::*;
+use card_sim::{AgentOwned, Board, Card, OnBoard, OnHand, CARD_WIDTH};
+
+use epithet::agent::Agent;
+
+use crate::board::action::Action;
+
+use crate::board::action::SummonActionEvent;
+
+use super::action::ActionState;
+use super::action::SummonActionFinishEvent;
 
 #[cfg(feature = "render")]
+#[cfg(feature = "client")]
 pub(crate) fn inserted_on_hand_observer(
     trigger: Trigger<OnInsert, OnHand>,
     mut commands: Commands,
@@ -9,6 +20,28 @@ pub(crate) fn inserted_on_hand_observer(
     boards: Query<&Board>,
     cameras: Query<&Transform, With<Camera>>,
 ) {
+    commands
+        .entity(trigger.entity())
+        .insert(On::<Pointer<Click>>::run(
+            //TODO make On::Run ? bevy 0.15 soon to be released
+            //TODO add self agent
+            |event: Listener<Pointer<Click>>,
+             mut commands: Commands,
+             mut action_states: Query<&mut ActionState, With<Agent>>,
+             on_boards: Query<&OnBoard>| {
+                if let Ok(on_board) = on_boards.get(event.listener()) {
+                    let mut action_state = action_states.single_mut();
+
+                    action_state.execute_action(
+                        &mut commands,
+                        Action::new(
+                            Box::new(SummonActionEvent::new(on_board.0, event.listener())),
+                            Box::new(SummonActionFinishEvent),
+                        ),
+                    );
+                }
+            },
+        ));
     if let Ok((on_board, player)) = cards_on_hands.get(trigger.entity()) {
         if let Ok(board) = boards.get(on_board.0) {
             if let Some(hand) = board.get_by_hand(player.0) {

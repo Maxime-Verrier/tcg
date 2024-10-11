@@ -1,6 +1,8 @@
 use bevy::prelude::*;
+use bevy_replicon::prelude::{RepliconChannels, ToClients};
 use epithet::{
-    net::{NetState, UserInfo},
+    agent::AgentManager,
+    net::{client_setup, server_listener_setup, AuthEvent, AuthManager, NetState},
     utils::{GameEntity, LevelEntity},
 };
 
@@ -72,29 +74,52 @@ fn spawn_button_with_text(
 }
 
 pub(crate) fn main_menu_button_system(
-    mut commands: Commands,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &MagicNumber),
         (Changed<Interaction>, With<Button>),
     >,
     mut states: ResMut<NextState<AppState>>,
     mut net_states: ResMut<NextState<NetState>>,
+    mut commands: Commands,
+    channels: Res<RepliconChannels>,
+    auth_manager: ResMut<AuthManager>,
+    agent_manager: ResMut<AgentManager>,
+    mut writer: EventWriter<ToClients<AuthEvent>>,
 ) {
+    let channels = channels.into_inner();
+    let auth_manager = auth_manager.into_inner();
+    let agent_manager = agent_manager.into_inner();
+
     for (interaction, mut color, magic_number) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 if magic_number.0 == 0 {
-                    net_states.set(NetState::Server);
+                    net_states.set(NetState::ListeningServer);
                     states.set(AppState::Game);
-                    commands.insert_resource(UserInfo::default());
+                    server_listener_setup(
+                        &mut commands,
+                        channels,
+                        auth_manager,
+                        agent_manager,
+                        &mut writer,
+                    );
+                //TODO use result
                 } else if magic_number.0 == 1 {
-                    net_states.set(NetState::Server);
+                    net_states.set(NetState::ListeningServer);
                     states.set(AppState::Game);
+                    server_listener_setup(
+                        &mut commands,
+                        channels,
+                        auth_manager,
+                        agent_manager,
+                        &mut writer,
+                    );
+                //TODO use result
                 } else if magic_number.0 == 2 {
                     net_states.set(NetState::Client);
                     states.set(AppState::Game);
-                    commands.insert_resource(UserInfo::default());
+                    client_setup(&mut commands, channels); //TODO use result
                 } else if magic_number.0 == 3 {
                     std::process::exit(0);
                 }

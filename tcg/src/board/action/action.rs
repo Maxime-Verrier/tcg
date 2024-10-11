@@ -1,4 +1,5 @@
 pub use bevy::prelude::*;
+use epithet::net::AuthEvent;
 
 #[derive(Component, Default)]
 pub struct ActionState {
@@ -45,5 +46,15 @@ impl ActionState {
         }
         action.action_event.send_deferred(commands);
         self.current = Some(action);
+    }
+}
+
+//TODO another observer to be made when update
+pub(crate) fn action_state_agent_observer(
+    mut commands: Commands,
+    mut reader: EventReader<AuthEvent>,
+) {
+    for evt in reader.read().cloned() {
+        commands.entity(evt.agent).insert(ActionState::default());
     }
 }

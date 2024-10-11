@@ -2,12 +2,14 @@ use bevy::ecs::entity::MapEntities;
 pub use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{Board, EffectEvent, Tree};
+use crate::{Board, EffectEvent, Stage, Tree};
 
 #[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct BoardState {
     current_turn_agent: Entity,
     current_priority_agent: Entity,
+
+    stage: Stage,
 
     #[serde(skip)]
     #[reflect(ignore)]
@@ -19,6 +21,7 @@ impl BoardState {
         Self {
             current_turn_agent,
             current_priority_agent: current_turn_agent,
+            stage: Stage::Start,
             tree: None,
         }
     }
@@ -29,6 +32,10 @@ impl BoardState {
         } else {
             self.tree = Some(Tree::new(card_entity));
         }
+    }
+
+    pub fn get_current_turn_agent(&self) -> &Entity {
+        &self.current_turn_agent
     }
 }
 

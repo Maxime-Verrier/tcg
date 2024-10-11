@@ -36,7 +36,7 @@ fn main() {
         state_plugin,
         ui_plugin,
         card_plugin,
-        board_plugin
+        board_plugin,
     ))
     .add_systems(Update, inspector_ui);
 

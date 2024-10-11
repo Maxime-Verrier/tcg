@@ -1,13 +1,17 @@
 use std::collections::BTreeSet;
 
+use bevy::prelude::Commands;
+use bevy::prelude::With;
 use bevy::{
     ecs::{
         component::{ComponentHooks, StorageType},
         entity::MapEntities,
-    }, math::IVec3, prelude::{Component, Entity, EntityMapper, Event, Observer, OnRemove, Query, Trigger}, reflect::Reflect, utils::{hashbrown::HashSet, HashMap}
+    },
+    math::IVec3,
+    prelude::{Component, Entity, EntityMapper, Event, Observer, OnRemove, Query, Trigger},
+    reflect::Reflect,
+    utils::{hashbrown::HashSet, HashMap},
 };
-use bevy::prelude::With;
-use bevy::prelude::Commands;
 
 use epithet::{agent::Agent, net::ClientReplicateWorld};
 use serde::{Deserialize, Serialize};
@@ -20,7 +24,7 @@ use crate::{BoardSlot, BoardState, OnField, OnHand, OnSlot};
 /// The lookup tables are automaticly synched internally when entites get their component removed/changed/added so no need to their values to the table
 #[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct Board {
-    state: BoardState,
+    pub state: BoardState,
 
     /// The agent entity that this client is controlling
     /// This is not replicated as each client will have their own agent entity
@@ -170,7 +174,10 @@ impl Component for Board {
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_add(|mut world, board_entity, _component_id| {
-            world.commands().entity(board_entity).insert(Observer::new(clean_lookup_on_world_replicate));
+            world
+                .commands()
+                .entity(board_entity)
+                .insert(Observer::new(clean_lookup_on_world_replicate));
         });
         hooks.on_remove(|mut world, board_entity, _component_id| {
             if let Some(field) = world.get::<Board>(board_entity) {
@@ -198,7 +205,21 @@ impl Component for Board {
 pub struct BoardLookupCreated; //TODO create a resource for system that need correct lookup tables even before this happend to run in run conditions ?
 
 #[cfg(feature = "client")]
-pub(crate) fn clean_lookup_on_world_replicate(trigger: Trigger<ClientReplicateWorld>, commands: Commands, boards: Query<&mut Board>, entities: Query<(Entity, &OnBoard, Option<&OnHand>, Option<&BoardSlot>, Option<&OnField>, Option<&OnSlot>, Option<&AgentOwned>)>, slots: Query<&BoardSlot, With<OnBoard>>) {
+pub(crate) fn clean_lookup_on_world_replicate(
+    trigger: Trigger<ClientReplicateWorld>,
+    commands: Commands,
+    boards: Query<&mut Board>,
+    entities: Query<(
+        Entity,
+        &OnBoard,
+        Option<&OnHand>,
+        Option<&BoardSlot>,
+        Option<&OnField>,
+        Option<&OnSlot>,
+        Option<&AgentOwned>,
+    )>,
+    slots: Query<&BoardSlot, With<OnBoard>>,
+) {
     return;
     if let Ok(mut board) = boards.get_mut(trigger.entity()) {
         board.clear_lookup_tables();
@@ -374,6 +395,7 @@ impl MapEntities for AgentOwned {
 pub(crate) fn board_agent_removed_observer(
     //TODO do the same for slot ?
     //TODO check if only one player and win/draw by default
+    //TODO only on agent on board ? idk
     trigger: Trigger<OnRemove, Agent>,
     query: Query<&OnBoard>,
     mut boards: Query<&mut Board>,
