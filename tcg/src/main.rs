@@ -13,6 +13,7 @@ use board::board_plugin;
 use card::card_plugin;
 use card_sim::CardSimPlugin;
 use epithet::{net::NetPlugins, units::UnitPlugin};
+use scene::dev_room_plugin;
 use state::state_plugin;
 use ui::ui_plugin;
 
@@ -37,8 +38,10 @@ fn main() {
         ui_plugin,
         card_plugin,
         board_plugin,
-    ))
-    .add_systems(Update, inspector_ui);
+        dev_room_plugin,
+    ));
+
+    app.add_systems(Update, inspector_ui);
 
     app.insert_resource(WinitSettings {
         focused_mode: UpdateMode::Continuous,

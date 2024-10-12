@@ -42,24 +42,42 @@ pub(crate) fn summon_packet_system(
     agent_manager: Res<AgentManager>,
 ) {
     for FromClient { client_id, event } in events.read() {
-        if let Some(agent) = agent_manager.agent_from_client_id(client_id, &auth_manager) {
-            if let Ok(board) = boards.get(event.board_entity) {
-                if board.state.get_current_turn_agent() != agent {
-                    warn!("Client {:?} tried to summon without being the current turn agent of this board", client_id);
-                    continue;
-                }
-                if slots.contains(event.slot_entity) && board.is_on_field(event.slot_entity) {
-                    if let Some(mut summoned_entity) = commands.get_entity(event.card_entity) {
-                        summoned_entity.remove::<OnHand>();
-                        summoned_entity.insert(OnSlot(event.slot_entity));
-                    }
-                }
+        let agent = match agent_manager.agent_from_client_id(client_id, &auth_manager) {
+            Some(agent) => agent,
+            None => {
+                warn!(
+                    "Client {:?} tried to summon without having an agent",
+                    client_id
+                );
+                continue;
             }
+        };
+
+        let board = match boards.get(event.board_entity) {
+            Ok(board) => board,
+            Err(_) => continue,
+        };
+
+        //TODO change later as you can summon without being the turn agent in the future, prio or smth like that ?
+        if !board
+            .state
+            .get_current_turn_agent()
+            .map_or(false, |current_agent| current_agent == *agent)
+        {
+            warn!("Client {:?} tried to summon without being the current turn agent on the board {:?}", client_id, event.board_entity);
+            continue;
+        }
+
+        if !slots.contains(event.slot_entity) || !board.is_on_field(event.slot_entity) {
+            warn!("Client {:?} tried to summon to a slot {:?} that does not exist or is not on the field on the board {:?}", client_id, event.slot_entity,  event.board_entity);
+            continue;
+        }
+
+        if let Some(mut summoned_entity) = commands.get_entity(event.card_entity) {
+            summoned_entity.remove::<OnHand>();
+            summoned_entity.insert(OnSlot(event.slot_entity));
         } else {
-            warn!(
-                "Client {:?} tried to summon without having an agent",
-                client_id
-            );
+            warn!("Client {:?} tried to summon a card that does not exist, on slot {:?}, on the board {:?}", client_id, event.slot_entity, event.board_entity);
         }
     }
 }

@@ -1,3 +1,22 @@
+mod field;
+mod hand;
+mod query;
+mod slot;
+mod stage;
+mod state;
+mod tree;
+
+use bevy_replicon::core::Replicated;
+use epithet::units::UnitRegistry;
+use epithet::utils::LevelEntity;
+pub use field::*;
+pub use hand::*;
+pub use query::*;
+pub use slot::*;
+pub use stage::*;
+pub use state::*;
+pub use tree::*;
+
 use std::collections::BTreeSet;
 
 use bevy::prelude::Commands;
@@ -16,7 +35,9 @@ use bevy::{
 use epithet::{agent::Agent, net::ClientReplicateWorld};
 use serde::{Deserialize, Serialize};
 
-use crate::{BoardSlot, BoardState, OnField, OnHand, OnSlot};
+use crate::Card;
+use crate::CardBundle;
+use crate::CardId;
 
 /// A component representing a board existing both as a marker and a lookup table to get entity on the board by common values
 /// The reason for this lookup table exist is to reduce iteration when needing to get entities by x by value as we can't query entites just for x board/hand/player/etc..
@@ -57,7 +78,7 @@ impl Board {
     pub fn new(agents: Vec<Entity>) -> Self {
         Self {
             agent_owned: None,
-            state: BoardState::new(agents[0]),
+            state: BoardState::new(agents),
             on_slot_lookup: HashMap::default(),
             on_field_lookup: HashSet::default(),
             slots_lookup: HashMap::default(),
@@ -69,6 +90,39 @@ impl Board {
 
     pub fn trigger_effect(&mut self, card: Entity) {
         self.state.trigger_effect(card);
+    }
+
+    pub(crate) fn create_agent_board(
+        &self,
+        agent: Entity,
+        board_entity: Entity,
+        commands: &mut Commands,
+        unit_registry: &UnitRegistry,
+    ) {
+        //TODO put it in the sim
+        commands.spawn((
+            SpatialBundle::default(),
+            BoardSlot(IVec3::new(0, 0, 0), None),
+            LevelEntity,
+            OnField,
+            OnBoard(board_entity),
+            Replicated,
+            AgentOwned(agent),
+            Name::new("Slot"),
+        ));
+
+        for i in 0..5 {
+            commands.spawn((
+                CardBundle {
+                    card: Card(CardId(i % 2)),
+                    ..default()
+                },
+                OnBoard(board_entity),
+                OnHand,
+                unit_registry.get_unit::<Card>(),
+                AgentOwned(agent),
+            ));
+        }
     }
 
     /// Clear all the lookup tables, this should not be called and is used to correctly set the lookup tables when a client is syncing with the server's world

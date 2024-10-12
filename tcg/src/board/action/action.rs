@@ -1,10 +1,4 @@
 pub use bevy::prelude::*;
-use epithet::net::AuthEvent;
-
-#[derive(Component, Default)]
-pub struct ActionState {
-    pub current: Option<Action>,
-}
 
 /// Allow to store event by erasing the type of the event
 /// It's need to be clonable and will get cloned when the event is sent
@@ -39,6 +33,11 @@ impl Action {
     }
 }
 
+#[derive(Resource, Default)]
+pub struct ActionState {
+    pub current: Option<Action>,
+}
+
 impl ActionState {
     pub(crate) fn execute_action(&mut self, commands: &mut Commands, action: Action) {
         if let Some(action) = &self.current {
@@ -46,15 +45,5 @@ impl ActionState {
         }
         action.action_event.send_deferred(commands);
         self.current = Some(action);
-    }
-}
-
-//TODO another observer to be made when update
-pub(crate) fn action_state_agent_observer(
-    mut commands: Commands,
-    mut reader: EventReader<AuthEvent>,
-) {
-    for evt in reader.read().cloned() {
-        commands.entity(evt.agent).insert(ActionState::default());
     }
 }

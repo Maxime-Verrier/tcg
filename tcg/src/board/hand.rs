@@ -2,8 +2,6 @@ pub use bevy::prelude::*;
 use bevy_mod_picking::prelude::*;
 use card_sim::{AgentOwned, Board, Card, OnBoard, OnHand, CARD_WIDTH};
 
-use epithet::agent::Agent;
-
 use crate::board::action::Action;
 
 use crate::board::action::SummonActionEvent;
@@ -27,11 +25,9 @@ pub(crate) fn inserted_on_hand_observer(
             //TODO add self agent
             |event: Listener<Pointer<Click>>,
              mut commands: Commands,
-             mut action_states: Query<&mut ActionState, With<Agent>>,
+             mut action_state: ResMut<ActionState>,
              on_boards: Query<&OnBoard>| {
                 if let Ok(on_board) = on_boards.get(event.listener()) {
-                    let mut action_state = action_states.single_mut();
-
                     action_state.execute_action(
                         &mut commands,
                         Action::new(

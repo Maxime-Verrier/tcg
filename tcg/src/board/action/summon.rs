@@ -52,10 +52,8 @@ pub(crate) fn summon_action_execute(
                 .insert(On::<Pointer<Click>>::run(
                     move |event: Listener<Pointer<Click>>,
                           mut summon_packet_writer: EventWriter<AgentSummonEvent>,
-                          mut action_states: Query<&mut ActionState>,
+                          mut action_state: ResMut<ActionState>,
                           mut commands: Commands| {
-                        let mut action_state = action_states.single_mut(); //TODO change ? there should not be less/more than action_state anyway
-
                         summon_packet_writer.send(AgentSummonEvent::new(
                             summon_event.board_entity,
                             summon_event.summon_entity,

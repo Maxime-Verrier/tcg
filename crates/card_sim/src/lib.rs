@@ -1,36 +1,22 @@
 pub mod agent_action;
 mod board;
-mod board_state;
 mod card;
-mod deck;
 mod effect;
-mod field;
-mod hand;
-mod query;
-mod slot;
-mod stage;
-mod tree;
 
 pub use board::*;
-pub use board_state::*;
 pub use card::*;
-pub use deck::*;
 pub use effect::*;
 use epithet::agent::AgentManager;
-pub use field::*;
-pub use hand::*;
-pub use query::*;
-pub use slot::*;
-pub use stage::*;
-pub use tree::*;
 
-use agent_action::{summon_packet_system, AgentSummonEvent};
+use agent_action::{board_agents_plugin, summon_packet_system, AgentSummonEvent};
 use bevy_replicon::prelude::{server_or_singleplayer, AppRuleExt, ChannelKind, ClientEventAppExt};
 
 pub struct CardSimPlugin;
 
 impl Plugin for CardSimPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_plugins(board_agents_plugin);
+
         app.register_type::<Board>();
         app.register_type::<OnSlot>();
         app.register_type::<AgentManager>();
