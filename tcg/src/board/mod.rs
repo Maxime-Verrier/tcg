@@ -12,6 +12,7 @@ pub(crate) fn board_plugin(app: &mut bevy::app::App) {
     #[cfg(feature = "render")]
     {
         app.observe(inserted_on_hand_observer);
+        app.observe(remove_from_hand_observer);
         app.observe(on_slot_observer); //TODO  run if agent
     }
 }

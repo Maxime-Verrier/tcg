@@ -4,7 +4,7 @@ use bevy_replicon::prelude::FromClient;
 use epithet::{agent::AgentManager, net::AuthManager};
 use serde::{Deserialize, Serialize};
 
-use crate::{Board, BoardSlot, OnHand, OnSlot};
+use crate::{AgentOwned, Board, BoardSlot, OnHand, OnSlot};
 
 //TODO add controller interdediate as this is a trust the client event
 #[derive(Event, Clone, Serialize, Deserialize, Debug)]
@@ -38,6 +38,7 @@ pub(crate) fn summon_packet_system(
     mut events: EventReader<FromClient<AgentSummonEvent>>,
     boards: Query<&mut Board>,
     slots: Query<&mut BoardSlot>,
+    on_hands : Query<&AgentOwned, With<OnHand>>,
     auth_manager: Res<AuthManager>,
     agent_manager: Res<AgentManager>,
 ) {
@@ -52,6 +53,17 @@ pub(crate) fn summon_packet_system(
                 continue;
             }
         };
+
+        if let Ok(agent_owned) = on_hands.get(event.card_entity) {
+            if agent_owned.0 != *agent {
+                warn!("Client {:?} tried to summon a card that was on another agent hand", client_id);
+                continue;
+            }
+        }
+        else {
+            warn!("Client {:?} tried to summon a card that was not on any hand", client_id);
+            continue;
+        }
 
         let board = match boards.get(event.board_entity) {
             Ok(board) => board,
@@ -68,7 +80,7 @@ pub(crate) fn summon_packet_system(
             continue;
         }
 
-        if !slots.contains(event.slot_entity) || !board.is_on_field(event.slot_entity) {
+        if !slots.contains(event.slot_entity) || !board.lookup.is_on_field(event.slot_entity) {
             warn!("Client {:?} tried to summon to a slot {:?} that does not exist or is not on the field on the board {:?}", client_id, event.slot_entity,  event.board_entity);
             continue;
         }

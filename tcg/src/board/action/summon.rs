@@ -43,7 +43,7 @@ pub(crate) fn summon_action_execute(
             return;
         }
     };
-    for slot in board.get_slots() {
+    for slot in board.lookup.get_slots() {
         if true
         /*slot_agent.0 == client_agent*/ /* Modify when client know which agent he play */
         {

@@ -9,6 +9,18 @@ use crate::board::action::SummonActionEvent;
 use super::action::ActionState;
 use super::action::SummonActionFinishEvent;
 
+pub(crate) fn remove_from_hand_observer(
+    trigger: Trigger<OnRemove, OnHand>,
+    boards: Query<&Board>,
+    mut commands: Commands,
+    on_hands: Query<(&OnBoard, &AgentOwned), With<OnHand>>,
+) {
+    if let Some(mut entity_commands) = commands.get_entity(trigger.entity()) {
+        //TODO just make an event and depending the place it will be executed ? or idk
+        entity_commands.remove::<On<Pointer<Click>>>();
+    }
+}
+
 #[cfg(feature = "render")]
 #[cfg(feature = "client")]
 pub(crate) fn inserted_on_hand_observer(
@@ -40,7 +52,7 @@ pub(crate) fn inserted_on_hand_observer(
         ));
     if let Ok((on_board, player)) = cards_on_hands.get(trigger.entity()) {
         if let Ok(board) = boards.get(on_board.0) {
-            if let Some(hand) = board.get_by_hand(player.0) {
+            if let Some(hand) = board.lookup.get_by_hand(player.0) {
                 let len = hand.len();
                 let radius = CARD_WIDTH * 18.0;
                 let angle_offset = -2.5; // degree
