@@ -25,7 +25,7 @@ impl BoardQuery {
                     //entities.push(vec);
                 }
                 BoardQueryLoc::Hand(player) => {
-                    if let Some(hand) = board.lookup.get_by_hand(player.0) {
+                    if let Some(hand) = board.lookup.get_by_hand(&player.0) {
                         entities.extend(hand.iter());
                     }
                 }

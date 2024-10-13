@@ -6,27 +6,20 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Reflect, Serialize, Deserialize, Default, Debug)]
+#[derive(Reflect, Default, Debug)]
 pub struct BoardLookup {
     // Lookup maps
-    #[serde(skip)]
     pub(crate) slots_lookup: HashMap<IVec3, Entity>,
-
-    #[serde(skip)]
     pub(crate) on_slot_lookup: HashMap<IVec3, Entity>,
 
     /// The key is the agent entity and the value is a set of entity on their hand
     /// BTreeSet is used as the order of the cards in the hand is important
-    #[serde(skip)]
-    pub(crate) on_hand_lookup: HashMap<Entity, BTreeSet<Entity>>,
-
-    #[serde(skip)]
+    pub on_hand_lookup: HashMap<Entity, BTreeSet<Entity>>,
     pub(crate) on_board_lookup: HashSet<Entity>,
 
     /// Every entities that belong to a agent
-    #[serde(skip)]
     pub(crate) agent_lookup: HashMap<Entity, HashSet<Entity>>,
-    #[serde(skip)]
+
     pub(crate) on_field_lookup: HashSet<Entity>,
 }
 
@@ -51,6 +44,7 @@ impl BoardLookup {
     }
 
     pub(crate) fn clean_agent_associate_values(&mut self, agent: Entity) {
+        println!("cleaning agent associate values: {:?}", agent);
         self.agent_lookup.remove(&agent);
         self.on_hand_lookup.remove(&agent);
     }

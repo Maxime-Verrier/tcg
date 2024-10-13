@@ -16,6 +16,9 @@ pub struct BoardState {
     pub(crate) stage: BoardStage,
 
     #[serde(skip)]
+    pub current_action: Option<bool>,
+
+    #[serde(skip)]
     #[reflect(ignore)]
     pub(crate) tree: Option<Tree>,
 }
@@ -25,6 +28,7 @@ impl BoardState {
         Self {
             current_turn_agent: None,
             current_turn_agent_index: 0,
+            current_action: None,
             stage: BoardStage::Start,
             tree: None,
             agents,
@@ -56,6 +60,7 @@ impl Board {
 
 impl MapEntities for BoardState {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
+        self.agents = self.agents.iter().map(|entity| entity_mapper.map_entity(*entity)).collect();
         self.current_turn_agent = self
             .current_turn_agent
             .map(|entity| entity_mapper.map_entity(entity));

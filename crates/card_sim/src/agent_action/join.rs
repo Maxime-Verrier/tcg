@@ -1,6 +1,6 @@
 use bevy::ecs::entity::MapEntities;
 pub use bevy::prelude::*;
-use bevy_replicon::prelude::FromClient;
+use bevy_replicon::prelude::{FromClient, SendMode, ToClients};
 use epithet::{
     agent::{AgentBundle, AgentManager},
     net::AuthManager,
@@ -23,43 +23,48 @@ impl BoardAgentJoinTrigger {
 }
 
 #[derive(Event, Serialize, Deserialize, Clone, Debug)]
-pub struct PlayerJoinPacket {
+pub struct ClientJoinBoardRequestPacket {
     pub board: Entity,
 }
 
-impl PlayerJoinPacket {
+impl ClientJoinBoardRequestPacket {
     pub fn new(board: Entity) -> Self {
         Self { board }
     }
 }
 
-impl MapEntities for PlayerJoinPacket {
+impl MapEntities for ClientJoinBoardRequestPacket {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         self.board = entity_mapper.map_entity(self.board);
     }
 }
 
 // RepliconObserver
-pub(crate) fn player_join_packet_system(
+// Render is after and rely on ordering but observer odn't have that
+pub fn player_join_packet_system(
     mut commands: Commands,
-    mut packets: EventReader<FromClient<PlayerJoinPacket>>,
+    mut packets: EventReader<FromClient<ClientJoinBoardRequestPacket>>,
     mut agent_manager: ResMut<AgentManager>,
     auth_manager: Res<AuthManager>,
     mut boards: Query<&mut Board>,
-    unit_registry: Res<UnitRegistry>,
+    mut writer: EventWriter<ToClients<ClientJoinedBoardPacket>>,
 ) {
-    let unit_registry = unit_registry.into_inner();
-
     for FromClient { client_id, event } in packets.read() {
         if let Some(auth_id) = auth_manager.get_auth_id(client_id) {
             let agent = commands.spawn(AgentBundle::default()).id();
 
             if let Ok(mut board) = boards.get_mut(event.board) {
                 //TODO check already have an agent/or is on board, decide if i want to keep generic agent
+
                 agent_manager.insert(*auth_id, agent);
                 board.add_agent(agent);
-                board.create_agent_board(agent, event.board, &mut commands, unit_registry);
+                board.create_agent_board(agent, event.board, &mut commands);
                 commands.trigger(BoardAgentJoinTrigger::new(event.board, agent));
+
+                writer.send(ToClients {
+                    mode: SendMode::Direct(*client_id),
+                    event: ClientJoinedBoardPacket::new(event.board, agent),
+                });
             } else {
                 warn!(
                     "Client {:?} tried to join a board that does not exist",
@@ -71,6 +76,40 @@ pub(crate) fn player_join_packet_system(
                 "Client {:?} tried to join a board while not being auth",
                 event.board
             );
+        }
+    }
+}
+
+/// Packet sent by the server to the client that joined a board only
+#[derive(Event, Serialize, Deserialize, Clone, Debug)]
+pub struct ClientJoinedBoardPacket {
+    pub board: Entity,
+    pub agent: Entity,
+}
+
+impl ClientJoinedBoardPacket {
+    pub fn new(board: Entity, agent: Entity) -> Self {
+        Self { board, agent }
+    }
+}
+
+impl MapEntities for ClientJoinedBoardPacket {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
+        self.board = entity_mapper.map_entity(self.board);
+        self.agent = entity_mapper.map_entity(self.agent);
+    }
+}
+
+// RepliconObserver
+pub fn player_joined_packet_system(
+    mut packets: EventReader<ClientJoinedBoardPacket>,
+    mut boards: Query<&mut Board>,
+) {
+    for ClientJoinedBoardPacket { board, agent } in packets.read() {
+        if let Ok(mut board) = boards.get_mut(*board) {
+            board.client_is_on_board = Some(*agent);
+        } else {
+            warn!("Server tried to send a player joined packet to a board that does not exist, this should not be possible");
         }
     }
 }

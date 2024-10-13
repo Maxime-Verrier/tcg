@@ -6,15 +6,15 @@ use bevy_mod_picking::{
 use card_sim::BoardSlot;
 use card_sim::{agent_action::AgentSummonEvent, AgentOwned, Board};
 
-use super::ActionState;
+use super::ClientActionState;
 
 #[derive(Event, Clone)]
-pub struct SummonActionEvent {
+pub struct ClientSummonAction {
     pub board_entity: Entity,
     pub summon_entity: Entity,
 }
 
-impl SummonActionEvent {
+impl ClientSummonAction {
     pub fn new(board_entity: Entity, summon_entity: Entity) -> Self {
         Self {
             board_entity,
@@ -28,7 +28,7 @@ impl SummonActionEvent {
 pub(crate) struct SummonActionFXMarker;
 
 pub(crate) fn summon_action_execute(
-    trigger: Trigger<SummonActionEvent>,
+    trigger: Trigger<ClientSummonAction>,
     mut commands: Commands,
     boards: Query<&Board>,
     slots_agents: Query<&AgentOwned, With<BoardSlot>>,
@@ -52,7 +52,7 @@ pub(crate) fn summon_action_execute(
                 .insert(On::<Pointer<Click>>::run(
                     move |event: Listener<Pointer<Click>>,
                           mut summon_packet_writer: EventWriter<AgentSummonEvent>,
-                          mut action_state: ResMut<ActionState>,
+                          mut action_state: ResMut<ClientActionState>,
                           mut commands: Commands| {
                         summon_packet_writer.send(AgentSummonEvent::new(
                             summon_event.board_entity,

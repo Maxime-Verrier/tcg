@@ -6,7 +6,12 @@ mod slot;
 mod stage;
 mod state;
 mod tree;
+mod action;
 
+use bevy_replicon::bincode;
+use bevy_replicon::core::ctx::WriteCtx;
+use bevy_replicon::core::replication_registry::rule_fns::DeserializeFn;
+use bevy_replicon::core::replication_registry::rule_fns::RuleFns;
 use bevy_replicon::core::Replicated;
 use epithet::units::UnitRegistry;
 use epithet::utils::LevelEntity;
@@ -18,8 +23,10 @@ pub use slot::*;
 pub use stage::*;
 pub use state::*;
 pub use tree::*;
+pub use action::*;
 
 use std::collections::BTreeSet;
+use std::io::Cursor;
 
 use bevy::prelude::Commands;
 use bevy::prelude::With;
@@ -47,13 +54,21 @@ use crate::CardId;
 /// The lookup tables are automaticly synched internally when entites get their component removed/changed/added so no need to their values to the table
 #[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct Board {
+    /// Tell toward the app running the simulation if the app is a client and is playing on this board
+    /// None if he is not playing on this board, the entity is the agent entity
+    #[serde(skip)]
+    pub client_is_on_board: Option<Entity>,
+
     pub state: BoardState,
+
+    #[serde(skip)]
     pub lookup: BoardLookup,
 }
 
 impl Board {
     pub fn new(agents: Vec<Entity>) -> Self {
         Self {
+            client_is_on_board: None,
             state: BoardState::new(agents),
             lookup: BoardLookup::default(),
         }
@@ -68,7 +83,6 @@ impl Board {
         agent: Entity,
         board_entity: Entity,
         commands: &mut Commands,
-        unit_registry: &UnitRegistry,
     ) {
         //TODO put it in the sim
         commands.spawn((
@@ -81,20 +95,24 @@ impl Board {
             AgentOwned(agent),
             Name::new("Slot"),
         ));
-
-        for i in 0..5 {
-            commands.spawn((
-                CardBundle {
-                    card: Card(CardId(i % 2)),
-                    ..default()
-                },
-                OnBoard(board_entity),
-                OnHand,
-                unit_registry.get_unit::<Card>(),
-                AgentOwned(agent),
-            ));
-        }
     }
+
+    pub fn board_in_place_as_deserialize(
+        deserialize: DeserializeFn<Board>,
+        ctx: &mut WriteCtx,
+        component: &mut Board,
+        cursor: &mut Cursor<&[u8]>,
+    ) -> bincode::Result<()> {
+        let deserialized_board = (deserialize)(ctx, cursor)?;
+
+        component.state.agents = deserialized_board.state.agents;
+        component.state.current_turn_agent = deserialized_board.state.current_turn_agent;
+        component.state.current_turn_agent_index = deserialized_board.state.current_turn_agent_index;
+        component.state.stage = deserialized_board.state.stage;
+
+        Ok(())
+    }
+    
 }
 
 impl Component for Board {
@@ -118,6 +136,12 @@ impl Component for Board {
                 }
             }
         });
+    }
+}
+
+impl MapEntities for Board {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
+        self.state.map_entities(entity_mapper);
     }
 }
 
@@ -151,6 +175,7 @@ impl Component for OnBoard {
                     if let Some(agent) = agent {
                         board.lookup.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
+                            println!("on board insert on hand");
                             board.lookup.insert_on_hand(agent.0, entity);
                         }
                     }
@@ -230,6 +255,8 @@ impl Component for AgentOwned {
                         board.lookup.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
                             board.lookup.insert_on_hand(agent.0, entity);
+                            println!("{:p}", board.into_inner());
+
                         }
                     }
                 }

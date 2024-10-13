@@ -38,7 +38,7 @@ pub(crate) fn summon_packet_system(
     mut events: EventReader<FromClient<AgentSummonEvent>>,
     boards: Query<&mut Board>,
     slots: Query<&mut BoardSlot>,
-    on_hands : Query<&AgentOwned, With<OnHand>>,
+    on_hands: Query<&AgentOwned, With<OnHand>>,
     auth_manager: Res<AuthManager>,
     agent_manager: Res<AgentManager>,
 ) {
@@ -56,12 +56,17 @@ pub(crate) fn summon_packet_system(
 
         if let Ok(agent_owned) = on_hands.get(event.card_entity) {
             if agent_owned.0 != *agent {
-                warn!("Client {:?} tried to summon a card that was on another agent hand", client_id);
+                warn!(
+                    "Client {:?} tried to summon a card that was on another agent hand",
+                    client_id
+                );
                 continue;
             }
-        }
-        else {
-            warn!("Client {:?} tried to summon a card that was not on any hand", client_id);
+        } else {
+            warn!(
+                "Client {:?} tried to summon a card that was not on any hand",
+                client_id
+            );
             continue;
         }
 

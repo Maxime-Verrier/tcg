@@ -24,6 +24,7 @@ impl Component for OnHand {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(player) = player {
+                        println!("inserting on hand: {:?}", entity);
                         board.lookup.insert_on_hand(player.0, entity);
                     }
                 }
@@ -50,12 +51,15 @@ impl BoardLookup {
     }
 
     pub(crate) fn remove_from_hand(&mut self, agent: Entity, entity: &Entity) -> bool {
+        println!("removing from hand: {:?}", entity);
         self.on_hand_lookup
             .get_mut(&agent)
             .map_or(false, |entities| entities.remove(entity))
     }
 
-    pub fn get_by_hand(&self, agent: Entity) -> Option<&BTreeSet<Entity>> {
-        self.on_hand_lookup.get(&agent)
+    pub fn get_by_hand(&self, agent: &Entity) -> Option<&BTreeSet<Entity>> {
+        println!("{:?}{:?}", agent, self.on_hand_lookup);
+
+        self.on_hand_lookup.get(agent)
     }
 }
