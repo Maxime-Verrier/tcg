@@ -2,12 +2,13 @@ pub use bevy::prelude::*;
 use bevy_mod_picking::prelude::*;
 use bevy_replicon::{client::ClientSet, core::Replicated};
 use card_sim::{
-    packets::{BoardAgentJoinTrigger, ClientJoinBoardRequestPacket}, AgentOwned, Board, BoardStage, Card, CardAttribute, CardBundle, CardId, CardVisibility, OnBoard, OnHand, StageChangePacket
+    packets::{BoardAgentJoinTrigger, ClientJoinBoardRequestPacket, ClientJoinedBoardPacket}, AgentOwned, Board, BoardStage, Card, CardAttribute, CardBundle, CardId, CardVisibility, OnBoard, OnHand, StageChangePacket, CARD_HEIGHT, CARD_WIDTH
 };
 use epithet::{agent::{self, AgentManager}, net::{AuthEvent, AuthManager}, units::UnitRegistry, utils::LevelEntity};
 
 pub(crate) fn dev_room_plugin(app: &mut App) {
     app.add_systems(Update, on_client_devroom_scene);
+    app.add_systems(Update, on_client_joined_board_dev_room_scene);
 
     app.observe(on_board_agent_join);
 }
@@ -46,10 +47,35 @@ pub fn on_board_agent_join(
     }
 }
 
+
+//RepliconObserver
+pub fn on_client_joined_board_dev_room_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut reader: EventReader<ClientJoinedBoardPacket>) {
+    for packet in reader.read() {
+        let board = packet.board;
+
+        commands.spawn((
+            PbrBundle {
+                mesh: meshes.add(Cuboid::new(CARD_WIDTH, 0.1, CARD_HEIGHT)),
+                transform: Transform::from_xyz(0.5, 0.0, 0.0),
+                ..default()
+            },
+            Name::new("Turn Button"),
+            LevelEntity,
+            On::<Pointer<Click>>::run(
+                 move |_event: Listener<Pointer<Click>>, mut writer: EventWriter<StageChangePacket>| {
+                    writer.send(StageChangePacket::new(BoardStage::Start, board));
+                },
+            ),
+        ));
+    }
+}
+
+//RepliconObserver
 pub fn on_client_devroom_scene(
     mut auth_packets: EventReader<AuthEvent>,
     mut writer: EventWriter<ClientJoinBoardRequestPacket>,
     boards: Query<Entity, With<Board>>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for _packet in auth_packets.read() {
         writer.send(ClientJoinBoardRequestPacket::new(boards.single()));
@@ -79,20 +105,4 @@ pub fn create_dev_room_scene(mut commands: Commands, mut meshes: ResMut<Assets<M
             Name::new("Board"),
         ))
         .id();
-
-    //TODO should be on the clients only
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Cuboid::new(0.3, 1.0, 0.6)),
-            transform: Transform::from_xyz(0.5, 0.0, 0.0),
-            ..default()
-        },
-        Name::new("Turn Button"),
-        LevelEntity,
-        On::<Pointer<Click>>::run(
-            move |event: Listener<Pointer<Click>>, mut writer: EventWriter<StageChangePacket>| {
-                writer.send(StageChangePacket::new(BoardStage::Start, board));
-            },
-        ),
-    ));
 }
