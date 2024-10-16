@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_replicon::prelude::{RepliconChannels, ToClients};
 use epithet::{
-    net::{client_setup, server_listener_setup, AuthEvent, AuthManager, NetState},
+    net::{client_setup, server_listener_setup, server_setup, AuthEvent, AuthManager, NetState},
     utils::{GameEntity, LevelEntity},
 };
 
@@ -97,9 +97,9 @@ pub(crate) fn main_menu_button_system(
                     server_listener_setup(&mut commands, channels, auth_manager, &mut writer);
                 //TODO use result
                 } else if magic_number.0 == 1 {
-                    net_states.set(NetState::ListeningServer);
+                    net_states.set(NetState::Server);
                     states.set(AppState::Game);
-                    server_listener_setup(&mut commands, channels, auth_manager, &mut writer);
+                    server_setup(&mut commands, channels);
                 //TODO use result
                 } else if magic_number.0 == 2 {
                     net_states.set(NetState::Client);

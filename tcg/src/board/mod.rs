@@ -2,18 +2,26 @@ pub mod client_action;
 mod hand;
 
 use bevy_replicon::client::ClientSet;
+
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 use client_action::board_action_plugin;
 pub use hand::*;
 
-use card_sim::{agent_action::{player_join_packet_system, player_joined_packet_system}, BoardSlot, OnSlot};
+use card_sim::{
+    packets::{player_join_packet_system, player_joined_packet_system},
+    BoardSlot, OnSlot,
+};
 
 use crate::scene::on_board_agent_join;
 
 pub(crate) fn board_plugin(app: &mut bevy::app::App) {
-    board_action_plugin(app);
-
     #[cfg(feature = "render")]
     {
+        #[cfg(feature = "client")]
+        {
+            board_action_plugin(app);
+        }
         app.observe(remove_from_hand_observer);
         app.observe(on_slot_observer); //TODO  run if agent
 

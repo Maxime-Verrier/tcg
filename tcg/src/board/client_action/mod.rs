@@ -6,6 +6,8 @@ pub use summon::*;
 
 use crate::state::AppState;
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 pub(crate) fn board_action_plugin(app: &mut bevy::app::App) {
     app.insert_resource(ClientActionState::default());
 
@@ -18,10 +20,14 @@ pub(crate) fn board_action_plugin(app: &mut bevy::app::App) {
 
 //MAYBE change how resource is inserted ? this will cause an issue if the player is on multiple boards, i don't think it will happen
 //MAYBE Also maybe just insert it when the player join a board, but honestly it's negligable memory save
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 fn action_state_setup(mut commands: Commands) {
     commands.insert_resource(ClientActionState::default());
 }
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 fn action_state_cleanup(mut commands: Commands) {
     commands.remove_resource::<ClientActionState>();
 }

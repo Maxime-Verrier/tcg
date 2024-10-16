@@ -1,3 +1,4 @@
+mod action;
 mod field;
 mod hand;
 mod lookup;
@@ -6,8 +7,8 @@ mod slot;
 mod stage;
 mod state;
 mod tree;
-mod action;
 
+pub use action::*;
 use bevy_replicon::bincode;
 use bevy_replicon::core::ctx::WriteCtx;
 use bevy_replicon::core::replication_registry::rule_fns::DeserializeFn;
@@ -23,7 +24,6 @@ pub use slot::*;
 pub use stage::*;
 pub use state::*;
 pub use tree::*;
-pub use action::*;
 
 use std::collections::BTreeSet;
 use std::io::Cursor;
@@ -107,12 +107,12 @@ impl Board {
 
         component.state.agents = deserialized_board.state.agents;
         component.state.current_turn_agent = deserialized_board.state.current_turn_agent;
-        component.state.current_turn_agent_index = deserialized_board.state.current_turn_agent_index;
+        component.state.current_turn_agent_index =
+            deserialized_board.state.current_turn_agent_index;
         component.state.stage = deserialized_board.state.stage;
 
         Ok(())
     }
-    
 }
 
 impl Component for Board {
@@ -175,7 +175,6 @@ impl Component for OnBoard {
                     if let Some(agent) = agent {
                         board.lookup.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
-                            println!("on board insert on hand");
                             board.lookup.insert_on_hand(agent.0, entity);
                         }
                     }
@@ -255,8 +254,6 @@ impl Component for AgentOwned {
                         board.lookup.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
                             board.lookup.insert_on_hand(agent.0, entity);
-                            println!("{:p}", board.into_inner());
-
                         }
                     }
                 }
@@ -296,7 +293,7 @@ pub(crate) fn board_agent_removed_observer(
     query: Query<&OnBoard>,
     mut boards: Query<&mut Board>,
 ) {
-    //todo err println
+    //TODO err print
     if let Ok(on_board) = query.get(trigger.entity()) {
         if let Ok(mut board) = boards.get_mut(on_board.0) {
             board.lookup.clean_agent_associate_values(trigger.entity());

@@ -4,16 +4,22 @@ use bevy_mod_picking::{
     prelude::{Listener, On},
 };
 use card_sim::BoardSlot;
-use card_sim::{agent_action::AgentSummonEvent, AgentOwned, Board};
+use card_sim::{packets::AgentSummonEvent, AgentOwned, Board};
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 use super::ClientActionState;
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 #[derive(Event, Clone)]
 pub struct ClientSummonAction {
     pub board_entity: Entity,
     pub summon_entity: Entity,
 }
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 impl ClientSummonAction {
     pub fn new(board_entity: Entity, summon_entity: Entity) -> Self {
         Self {
@@ -24,9 +30,12 @@ impl ClientSummonAction {
 }
 
 #[cfg(feature = "render")]
+#[cfg(feature = "client")]
 #[derive(Component)]
 pub(crate) struct SummonActionFXMarker;
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 pub(crate) fn summon_action_execute(
     trigger: Trigger<ClientSummonAction>,
     mut commands: Commands,
@@ -77,9 +86,13 @@ pub(crate) fn summon_action_execute(
     //TODO slot check to cancel the action ?
 }
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 #[derive(Event, Clone)]
 pub struct SummonActionFinishEvent;
 
+#[cfg(feature = "render")]
+#[cfg(feature = "client")]
 pub(crate) fn summon_action_finish(
     _trigger: Trigger<SummonActionFinishEvent>,
     query: Query<Entity, With<SummonActionFXMarker>>,

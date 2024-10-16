@@ -23,7 +23,7 @@ mod scene;
 mod state;
 mod ui;
 
-fn main() {
+pub fn create_app() {
     let mut app = App::new();
 
     app.add_plugins((

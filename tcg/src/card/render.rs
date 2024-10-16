@@ -2,14 +2,17 @@ use std::collections::HashMap;
 
 use bevy::{ecs::system::EntityCommands, prelude::*, render::view::visibility};
 use card_sim::{Card, CardId};
+use card_sim::CardAttribute;
 
+#[cfg(feature = "render")]
 pub fn create_card_render(
     card_entity: In<Entity>,
     mut commands: Commands,
     card_assets: Res<CardAssets>,
-    cards: Query<(&Card, Option<&Transform>, Option<&Visibility>)>,
+    cards: Query<(&Card, Option<&CardAttribute>, Option<&Transform>, Option<&Visibility>)>,
 ) {
-    if let Ok((card, transform, visibility)) = cards.get(card_entity.0) {
+
+    if let Ok((card, attribute, transform, visibility)) = cards.get(card_entity.0) {
         let mut card_commands = commands.entity(card_entity.0);
 
         if transform.is_none() {
@@ -19,7 +22,7 @@ pub fn create_card_render(
             card_commands.insert(VisibilityBundle::default());
         }
 
-        card_assets.insert_card_render(&mut card_commands, &card.0);
+        card_assets.insert_card_render(&mut card_commands, attribute.map(|attr| &attr.id));
     } else {
         error!("Could not create card render, the provided entity do not have a card component");
     }
@@ -41,15 +44,18 @@ impl CardAssets {
         self.arts.insert(id, material);
     }
 
-    pub fn insert_card_render(&self, commands: &mut EntityCommands, id: &CardId) {
+    pub fn insert_card_render(&self, commands: &mut EntityCommands, id: Option<&CardId>) {
         commands.with_children(|parent| {
-            parent
+            let mut entity = parent
                 .spawn(PbrBundle {
                     material: self.back_material.clone(),
                     mesh: self.face_mesh.clone(),
                     ..default()
-                })
-                .with_children(|parent| {
+                });
+
+
+            if let Some(id) = id {
+                entity.with_children(|parent| {
                     parent.spawn(PbrBundle {
                         mesh: self.face_mesh.clone(),
                         material: self.arts.get(id).unwrap().clone(), //TODO handle unwrap
@@ -58,6 +64,18 @@ impl CardAssets {
                         ..default()
                     });
                 });
+            }
+            else {
+                entity.with_children(|parent| {
+                    parent.spawn(PbrBundle {
+                        material: self.back_material.clone(),
+                        mesh: self.face_mesh.clone(),
+                            transform: Transform::IDENTITY
+                            .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
+                        ..default()
+                    });
+                });
+            }
         });
     }
 }

@@ -3,6 +3,15 @@ name = "tcg"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "client"
+path = "src/bin/client.rs"
+required-features = ["render", "client"]
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
 [dependencies]
 bevy = { workspace = true }
 bevy-inspector-egui = { workspace = true }
@@ -13,6 +22,5 @@ epithet = { workspace = true }
 card_sim = { workspace = true }
 
 [features]
-default = ["render", "client"]
 render = ["card_sim/render"]
 client = []

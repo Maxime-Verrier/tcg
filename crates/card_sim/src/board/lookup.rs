@@ -44,7 +44,6 @@ impl BoardLookup {
     }
 
     pub(crate) fn clean_agent_associate_values(&mut self, agent: Entity) {
-        println!("cleaning agent associate values: {:?}", agent);
         self.agent_lookup.remove(&agent);
         self.on_hand_lookup.remove(&agent);
     }

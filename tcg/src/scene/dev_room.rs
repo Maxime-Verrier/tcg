@@ -2,12 +2,9 @@ pub use bevy::prelude::*;
 use bevy_mod_picking::prelude::*;
 use bevy_replicon::{client::ClientSet, core::Replicated};
 use card_sim::{
-    agent_action::{BoardAgentJoinTrigger, ClientJoinBoardRequestPacket},
-    AgentOwned, Board, BoardStage, Card, CardBundle, CardId, OnBoard, OnHand, StageChangePacket,
+    packets::{BoardAgentJoinTrigger, ClientJoinBoardRequestPacket}, AgentOwned, Board, BoardStage, Card, CardAttribute, CardBundle, CardId, CardVisibility, OnBoard, OnHand, StageChangePacket
 };
-use epithet::{net::AuthEvent, units::UnitRegistry, utils::LevelEntity};
-
-use crate::card::CardAssets;
+use epithet::{agent::{self, AgentManager}, net::{AuthEvent, AuthManager}, units::UnitRegistry, utils::LevelEntity};
 
 pub(crate) fn dev_room_plugin(app: &mut App) {
     app.add_systems(Update, on_client_devroom_scene);
@@ -20,6 +17,8 @@ pub fn on_board_agent_join(
     mut boards: Query<&mut Board>,
     mut commands: Commands,
     unit_registry: Res<UnitRegistry>,
+    auth_manager: Res<AuthManager>,
+    agent_manager: Res<AgentManager>,
 ) {
     if let Ok(mut board) = boards.get_mut(trigger.event().board) {
         board.state.game_start();
@@ -27,9 +26,12 @@ pub fn on_board_agent_join(
         for i in 0..5 {
             commands.spawn((
                 CardBundle {
-                    card: Card(CardId(i % 2)),
+                    card: Card,
+                    card_attribute: CardAttribute::new(CardId(i % 2)),
+                    card_visibility: CardVisibility::new(vec![*auth_manager.get_client_id(agent_manager.get_auth_id(&trigger.event().agent).unwrap()).unwrap()], false),
                     ..default()
                 },
+                //TODO change this
                 OnBoard(trigger.event().board),
                 OnHand,
                 unit_registry.get_unit::<Card>(),
@@ -54,7 +56,7 @@ pub fn on_client_devroom_scene(
     }
 }
 
-pub fn create_dev_room_core_scene(mut commands: Commands, card_assets: Res<CardAssets>) {
+pub fn create_dev_room_core_scene(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
             transform: Transform::from_xyz(0.0, 1.0, 0.3).looking_at(Vec3::ZERO, Vec3::Y),
@@ -68,7 +70,7 @@ pub fn create_dev_room_core_scene(mut commands: Commands, card_assets: Res<CardA
     });
 }
 
-pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets>) {
+pub fn create_dev_room_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let board = commands
         .spawn((
             Board::new(vec![]),
@@ -81,8 +83,7 @@ pub fn create_dev_room_scene(mut commands: Commands, card_assets: Res<CardAssets
     //TODO should be on the clients only
     commands.spawn((
         PbrBundle {
-            mesh: card_assets.deck_mesh.clone(),
-            material: card_assets.deck_material.clone(),
+            mesh: meshes.add(Cuboid::new(0.3, 1.0, 0.6)),
             transform: Transform::from_xyz(0.5, 0.0, 0.0),
             ..default()
         },
