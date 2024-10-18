@@ -1,4 +1,4 @@
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use bevy::{
     window::PrimaryWindow,
     winit::{UpdateMode, WinitSettings},
@@ -17,17 +17,23 @@ use scene::dev_room_plugin;
 use state::state_plugin;
 use ui::ui_plugin;
 
-mod board;
-mod card;
+pub mod board;
+pub mod card;
 mod scene;
 mod state;
 mod ui;
 
-pub fn create_app() {
+pub fn create_app<S: Into<String>>(window_name: S) {
     let mut app = App::new();
 
     app.add_plugins((
-        DefaultPlugins,
+        DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: window_name.into(),
+                ..default()
+            }),
+            ..default()
+        }),
         DefaultInspectorConfigPlugin,
         EguiPlugin,
         DefaultPickingPlugins,

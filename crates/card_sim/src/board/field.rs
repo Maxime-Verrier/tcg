@@ -1,4 +1,4 @@
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use bevy::{
     ecs::component::{ComponentHooks, StorageType},
     utils::HashSet,

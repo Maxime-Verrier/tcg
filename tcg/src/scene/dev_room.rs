@@ -1,10 +1,17 @@
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use bevy_mod_picking::prelude::*;
-use bevy_replicon::{client::ClientSet, core::Replicated};
+use bevy_replicon::core::Replicated;
 use card_sim::{
-    packets::{BoardAgentJoinTrigger, ClientJoinBoardRequestPacket, ClientJoinedBoardPacket}, AgentOwned, Board, BoardStage, Card, CardAttribute, CardBundle, CardId, CardVisibility, OnBoard, OnHand, StageChangePacket, CARD_HEIGHT, CARD_WIDTH
+    AgentOwned, Board, BoardAgentJoin, BoardStage, Card, CardAttribute, CardBundle, CardId,
+    CardVisibility, ClientJoinBoardRequestPacket, ClientJoinedBoardPacket, OnBoard, OnHand,
+    StageChangePacket, CARD_HEIGHT, CARD_WIDTH,
 };
-use epithet::{agent::{self, AgentManager}, net::{AuthEvent, AuthManager}, units::UnitRegistry, utils::LevelEntity};
+use epithet::{
+    agent::AgentManager,
+    net::{AuthEvent, AuthManager},
+    units::UnitRegistry,
+    utils::LevelEntity,
+};
 
 pub(crate) fn dev_room_plugin(app: &mut App) {
     app.add_systems(Update, on_client_devroom_scene);
@@ -14,7 +21,7 @@ pub(crate) fn dev_room_plugin(app: &mut App) {
 }
 
 pub fn on_board_agent_join(
-    trigger: Trigger<BoardAgentJoinTrigger>,
+    trigger: Trigger<BoardAgentJoin>,
     mut boards: Query<&mut Board>,
     mut commands: Commands,
     unit_registry: Res<UnitRegistry>,
@@ -29,7 +36,14 @@ pub fn on_board_agent_join(
                 CardBundle {
                     card: Card,
                     card_attribute: CardAttribute::new(CardId(i % 2)),
-                    card_visibility: CardVisibility::new(vec![*auth_manager.get_client_id(agent_manager.get_auth_id(&trigger.event().agent).unwrap()).unwrap()], false),
+                    card_visibility: CardVisibility::new(
+                        vec![*auth_manager
+                            .get_client_id(
+                                agent_manager.get_auth_id(&trigger.event().agent).unwrap(),
+                            )
+                            .unwrap()],
+                        false,
+                    ),
                     ..default()
                 },
                 //TODO change this
@@ -47,9 +61,12 @@ pub fn on_board_agent_join(
     }
 }
 
-
 //RepliconObserver
-pub fn on_client_joined_board_dev_room_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut reader: EventReader<ClientJoinedBoardPacket>) {
+pub fn on_client_joined_board_dev_room_scene(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut reader: EventReader<ClientJoinedBoardPacket>,
+) {
     for packet in reader.read() {
         let board = packet.board;
 
@@ -62,7 +79,8 @@ pub fn on_client_joined_board_dev_room_scene(mut commands: Commands, mut meshes:
             Name::new("Turn Button"),
             LevelEntity,
             On::<Pointer<Click>>::run(
-                 move |_event: Listener<Pointer<Click>>, mut writer: EventWriter<StageChangePacket>| {
+                move |_event: Listener<Pointer<Click>>,
+                      mut writer: EventWriter<StageChangePacket>| {
                     writer.send(StageChangePacket::new(BoardStage::Start, board));
                 },
             ),
@@ -75,9 +93,10 @@ pub fn on_client_devroom_scene(
     mut auth_packets: EventReader<AuthEvent>,
     mut writer: EventWriter<ClientJoinBoardRequestPacket>,
     boards: Query<Entity, With<Board>>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    meshes: ResMut<Assets<Mesh>>,
 ) {
     for _packet in auth_packets.read() {
+        //TODO somehow boards are not replicated yet if i spam enter exit
         writer.send(ClientJoinBoardRequestPacket::new(boards.single()));
     }
 }
@@ -96,13 +115,11 @@ pub fn create_dev_room_core_scene(mut commands: Commands) {
     });
 }
 
-pub fn create_dev_room_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let board = commands
-        .spawn((
-            Board::new(vec![]),
-            Replicated,
-            LevelEntity,
-            Name::new("Board"),
-        ))
-        .id();
+pub fn create_dev_room_scene(mut commands: Commands) {
+    commands.spawn((
+        Board::new(vec![]),
+        Replicated,
+        LevelEntity,
+        Name::new("Board"),
+    ));
 }

@@ -1,5 +1,11 @@
-use bevy::{ecs::{component::ComponentId, query::{QueryData, QueryFilter}}, utils::HashMap};
-pub use bevy::prelude::*;
+use bevy::prelude::*;
+use bevy::{
+    ecs::{
+        component::ComponentId,
+        query::{QueryData, QueryFilter},
+    },
+    utils::HashMap,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Resource)]
@@ -94,16 +100,14 @@ impl RuntimeQueryTag {
             RuntimeQueryData::With(data) => {
                 let ids: Result<Vec<_>, _> = data.iter()
                     .map(|d| tag_registry.tags.get(d)
-                        .ok_or_else(|| format!("Warning: Component '{}' not found in TagRegistry during RuntimeQueryData::to_ids", d))
-                        .map(|&id| id))
+                        .ok_or_else(|| format!("Warning: Component '{}' not found in TagRegistry during RuntimeQueryData::to_ids", d)).copied())
                     .collect();
                 Ok(RuntimeQueryData::With(ids?))
             }
             RuntimeQueryData::Without(data) => {
                 let ids: Result<Vec<_>, _> = data.iter()
                     .map(|d| tag_registry.tags.get(d)
-                        .ok_or_else(|| format!("Warning: Component '{}' not found in TagRegistry during RuntimeQueryData::to_ids", d))
-                        .map(|&id| id))
+                        .ok_or_else(|| format!("Warning: Component '{}' not found in TagRegistry during RuntimeQueryData::to_ids", d)).copied())
                     .collect();
                 Ok(RuntimeQueryData::Without(ids?))
             }

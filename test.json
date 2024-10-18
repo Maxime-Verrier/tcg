@@ -1,0 +1,38 @@
+{
+    "name": "John",
+    "effects": [
+      {
+        "cooldown": {},
+        "targets_groups": [
+          {
+            "name": "group1",
+            "tags": [
+              {
+                "with": [
+                  "effect1"
+                ]
+              },
+              {
+                "or": [
+                  {
+                    "with": [
+                      "effect2",
+                      "effect1"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "value": 1
+      },
+      {
+        "name": "effect1"
+      },
+      {
+        "name": "effect2",
+        "value": 2
+      }
+    ]
+  }

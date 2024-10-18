@@ -1,52 +1,73 @@
-mod action;
+mod agent_action;
 mod field;
 mod hand;
 mod lookup;
+mod packet;
 mod query;
+mod sequence;
 mod slot;
 mod stage;
 mod state;
 mod tree;
 
-pub use action::*;
-use bevy_replicon::bincode;
-use bevy_replicon::core::ctx::WriteCtx;
-use bevy_replicon::core::replication_registry::rule_fns::DeserializeFn;
-use bevy_replicon::core::replication_registry::rule_fns::RuleFns;
-use bevy_replicon::core::Replicated;
-use epithet::units::UnitRegistry;
-use epithet::utils::LevelEntity;
+pub use agent_action::*;
+pub use agent_action::*;
 pub use field::*;
 pub use hand::*;
 pub use lookup::*;
+pub use packet::*;
 pub use query::*;
+pub use sequence::*;
 pub use slot::*;
 pub use stage::*;
 pub use state::*;
 pub use tree::*;
 
-use std::collections::BTreeSet;
 use std::io::Cursor;
 
-use bevy::prelude::Commands;
-use bevy::prelude::With;
 use bevy::{
     ecs::{
         component::{ComponentHooks, StorageType},
         entity::MapEntities,
     },
     math::IVec3,
-    prelude::{Component, Entity, EntityMapper, Event, Observer, OnRemove, Query, Trigger},
+    prelude::*,
+    prelude::{Component, Entity, EntityMapper, OnRemove, Query, Trigger},
     reflect::Reflect,
-    utils::{hashbrown::HashSet, HashMap},
 };
-
-use epithet::{agent::Agent, net::ClientReplicateWorld};
+use bevy_replicon::{
+    bincode,
+    core::{
+        ctx::WriteCtx,
+        replication_registry::rule_fns::{DeserializeFn, RuleFns},
+    },
+    prelude::*,
+};
+use epithet::agent::Agent;
+use epithet::units::UnitRegistry;
+use epithet::utils::LevelEntity;
 use serde::{Deserialize, Serialize};
 
-use crate::Card;
-use crate::CardBundle;
-use crate::CardId;
+pub(crate) fn board_plugin(app: &mut App) {
+    app.add_plugins((board_packet_plugin, agent_action_plugin));
+
+    app.register_type::<Board>();
+    app.register_type::<OnSlot>();
+
+    app.replicate_with::<Board>(
+        RuleFns::default_mapped().with_in_place(Board::board_in_place_as_deserialize),
+    );
+    app.replicate_mapped::<OnBoard>();
+    app.replicate::<OnHand>();
+    app.replicate::<OnField>();
+    app.replicate_mapped::<AgentOwned>();
+    app.replicate_mapped::<OnSlot>();
+    app.replicate_mapped::<BoardSlot>();
+
+    app.add_systems(Update, board_state_update);
+
+    app.observe(board_agent_removed_observer);
+}
 
 /// A component representing a board existing both as a marker and a lookup table to get entity on the board by common values
 /// The reason for this lookup table exist is to reduce iteration when needing to get entities by x by value as we can't query entites just for x board/hand/player/etc..
@@ -74,8 +95,8 @@ impl Board {
         }
     }
 
-    pub fn trigger_effect(&mut self, card: Entity) {
-        self.state.trigger_effect(card);
+    pub fn trigger_effect(&mut self, card: Entity, effect_index: usize) {
+        self.state.trigger_effect(card, effect_index);
     }
 
     pub(crate) fn create_agent_board(
@@ -83,6 +104,7 @@ impl Board {
         agent: Entity,
         board_entity: Entity,
         commands: &mut Commands,
+        unit_registry: &UnitRegistry,
     ) {
         //TODO put it in the sim
         commands.spawn((
@@ -93,6 +115,7 @@ impl Board {
             OnBoard(board_entity),
             Replicated,
             AgentOwned(agent),
+            unit_registry.get_unit::<BoardSlot>(),
             Name::new("Slot"),
         ));
     }

@@ -1,5 +1,5 @@
 use bevy::ecs::entity::MapEntities;
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use bevy_replicon::prelude::{FromClient, SendMode, ToClients};
 use epithet::{
     agent::{AgentBundle, AgentManager},
@@ -11,12 +11,12 @@ use serde::{Deserialize, Serialize};
 use crate::Board;
 
 #[derive(Event, Serialize, Deserialize, Clone, Debug)]
-pub struct BoardAgentJoinTrigger {
+pub struct BoardAgentJoin {
     pub board: Entity,
     pub agent: Entity,
 }
 
-impl BoardAgentJoinTrigger {
+impl BoardAgentJoin {
     pub fn new(board: Entity, agent: Entity) -> Self {
         Self { board, agent }
     }
@@ -48,6 +48,7 @@ pub fn player_join_packet_system(
     auth_manager: Res<AuthManager>,
     mut boards: Query<&mut Board>,
     mut writer: EventWriter<ToClients<ClientJoinedBoardPacket>>,
+    unit_registry: Res<UnitRegistry>,
 ) {
     for FromClient { client_id, event } in packets.read() {
         if let Some(auth_id) = auth_manager.get_auth_id(client_id) {
@@ -58,8 +59,8 @@ pub fn player_join_packet_system(
 
                 agent_manager.insert(*auth_id, agent);
                 board.add_agent(agent);
-                board.create_agent_board(agent, event.board, &mut commands);
-                commands.trigger(BoardAgentJoinTrigger::new(event.board, agent));
+                board.create_agent_board(agent, event.board, &mut commands, &unit_registry);
+                commands.trigger(BoardAgentJoin::new(event.board, agent));
 
                 writer.send(ToClients {
                     mode: SendMode::Direct(*client_id),

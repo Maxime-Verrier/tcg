@@ -1,5 +1,5 @@
 use tcg::create_app;
 
 pub fn main() {
-    create_app();
+    create_app("TCG Server");
 }

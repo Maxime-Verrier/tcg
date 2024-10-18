@@ -1,6 +1,9 @@
-use bevy::{ecs::entity::MapEntities, prelude::*, utils::HashMap};
-use bevy_replicon::{core::{ClientId, Replicated}, prelude::{SendMode, ToClients}};
-use epithet::{units::{RenderRegistry, UnitRegistry}, utils::LevelEntity};
+use bevy::{ecs::entity::MapEntities, prelude::*};
+use bevy_replicon::{
+    core::ClientId,
+    prelude::{SendMode, ToClients},
+};
+use epithet::units::{RenderRegistry, UnitRegistry};
 use serde::{Deserialize, Serialize};
 
 use super::{Card, CardAttribute};
@@ -16,7 +19,10 @@ pub struct CardVisibility {
 
 impl CardVisibility {
     pub fn new(visible_to: Vec<ClientId>, visible_to_all: bool) -> Self {
-        Self { visible_to, visible_to_all }
+        Self {
+            visible_to,
+            visible_to_all,
+        }
     }
 }
 
@@ -35,30 +41,54 @@ impl MapEntities for CardAttributePacket {
 }
 
 //TODO make it OnMutate observer when bevy supports it
-pub(crate) fn card_visibility_observer(mut event_writter: EventWriter<ToClients<CardAttributePacket>>, query: Query<(Entity, &CardVisibility, &CardAttribute), Or<(Added<CardAttribute>, Added<CardVisibility>)>>) {
+pub(crate) fn card_visibility_observer(
+    mut event_writter: EventWriter<ToClients<CardAttributePacket>>,
+    query: Query<
+        (Entity, &CardVisibility, &CardAttribute),
+        Or<(Added<CardAttribute>, Added<CardVisibility>)>,
+    >,
+) {
     for (entity, visibility, attribute) in query.iter() {
         if visibility.visible_to_all {
-            event_writter.send(ToClients { mode: SendMode::Broadcast, event: CardAttributePacket { card: entity, attribute: attribute.clone(), remove: false } });
-        }
-        else {
+            event_writter.send(ToClients {
+                mode: SendMode::Broadcast,
+                event: CardAttributePacket {
+                    card: entity,
+                    attribute: attribute.clone(),
+                    remove: false,
+                },
+            });
+        } else {
             for client_id in visibility.visible_to.iter() {
-                event_writter.send(ToClients { mode: SendMode::Direct(*client_id), event: CardAttributePacket { card: entity, attribute: attribute.clone(), remove: false } });
+                event_writter.send(ToClients {
+                    mode: SendMode::Direct(*client_id),
+                    event: CardAttributePacket {
+                        card: entity,
+                        attribute: attribute.clone(),
+                        remove: false,
+                    },
+                });
             }
         }
     }
 }
 
-pub(crate) fn on_card_visibility_event(mut commands: Commands, mut reader: EventReader<CardAttributePacket>, renders: Res<RenderRegistry>, units: Res<UnitRegistry>) {
+pub(crate) fn on_card_visibility_event(
+    mut commands: Commands,
+    mut reader: EventReader<CardAttributePacket>,
+    renders: Res<RenderRegistry>,
+    units: Res<UnitRegistry>,
+) {
     for packet in reader.read() {
         if packet.remove {
             commands.entity(packet.card).remove::<CardAttribute>();
-        }
-        else {
-            let mut entity_commands: bevy::ecs::system::EntityCommands<'_> = commands.entity(packet.card);
-            
+        } else {
+            let mut entity_commands: bevy::ecs::system::EntityCommands<'_> =
+                commands.entity(packet.card);
+
             entity_commands.insert(packet.attribute.clone());
 
-            #[cfg(feature = "render")] 
+            #[cfg(feature = "render")]
             {
                 entity_commands.despawn_descendants();
 

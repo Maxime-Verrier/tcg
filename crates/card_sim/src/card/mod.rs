@@ -2,12 +2,26 @@ mod visibility;
 
 pub use visibility::*;
 
-use bevy::{ecs::entity::MapEntities, prelude::*, utils::HashMap};
-use bevy_replicon::{core::{ClientId, Replicated}, prelude::{SendMode, ToClients}};
-use epithet::{units::{RenderRegistry, UnitRegistry}, utils::LevelEntity};
+use bevy::{prelude::*, utils::HashMap};
+use bevy_replicon::{
+    core::Replicated,
+    prelude::{AppRuleExt, ChannelKind, ServerEventAppExt},
+    server::ServerSet,
+};
+use epithet::utils::LevelEntity;
 use serde::{Deserialize, Serialize};
 
-use crate::{EffectGroup, Effects};
+use crate::{Effect, Effects};
+
+pub fn card_plugin(app: &mut App) {
+    app.replicate::<Card>();
+
+    app.add_mapped_server_event::<CardAttributePacket>(ChannelKind::Ordered);
+    app.add_systems(Update, card_visibility_observer.before(ServerSet::Send));
+    app.add_systems(Update, on_card_visibility_event);
+
+    app.replicate::<Card>();
+}
 
 pub const CARD_WIDTH: f32 = 0.063;
 pub const CARD_HEIGHT: f32 = 0.088;
@@ -37,27 +51,34 @@ pub struct CardRegistry {
 pub struct CardData {
     pub name: String,
     pub description: String,
-    pub effects: Vec<Box<dyn EffectGroup + 'static + Send + Sync>>,
+    pub effects: Vec<Box<dyn Effect + 'static + Send + Sync>>,
 }
 
 impl CardData {
     pub fn create_instance(&self) -> (CardBundle, Effects) {
-        (CardBundle {
-            name: Name::new(self.name.clone()),
-            //TODO copy id and any needed data
-            ..default()
-        },
-        Effects(self.effects.iter().map(|effect| effect.clone_group()).collect()))
+        (
+            CardBundle {
+                name: Name::new(self.name.clone()),
+                //TODO copy id and any needed data
+                ..default()
+            },
+            Effects::new(
+                self.effects
+                    .iter()
+                    .map(|effect| effect.instance())
+                    .collect(),
+            ),
+        )
     }
 }
 
 pub trait CardPluginExt {
-    fn add_cards(&mut self, ) -> &mut Self;
+    fn add_cards(&mut self) -> &mut Self;
 }
 
 impl CardPluginExt for App {
     fn add_cards(&mut self) -> &mut Self {
-        let mut card_registry = self.world_mut().get_resource_mut::<CardRegistry>();
+        let card_registry = self.world_mut().get_resource_mut::<CardRegistry>();
 
         self
     }

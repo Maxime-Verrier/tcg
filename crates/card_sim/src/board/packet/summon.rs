@@ -1,10 +1,13 @@
 use bevy::ecs::entity::MapEntities;
-pub use bevy::prelude::*;
-use bevy_replicon::prelude::FromClient;
+use bevy::prelude::*;
+use bevy_replicon::prelude::{FromClient, SendMode, ToClients};
 use epithet::{agent::AgentManager, net::AuthManager};
 use serde::{Deserialize, Serialize};
 
-use crate::{AgentOwned, Board, BoardSlot, OnHand, OnSlot};
+use crate::{
+    AgentActionPacket, AgentActionRegistry, AgentOwned, Board, BoardSlot, OnHand, OnSlot,
+    TargetAgentAction,
+};
 
 //TODO add controller interdediate as this is a trust the client event
 #[derive(Event, Clone, Serialize, Deserialize, Debug)]
@@ -41,6 +44,8 @@ pub(crate) fn summon_packet_system(
     on_hands: Query<&AgentOwned, With<OnHand>>,
     auth_manager: Res<AuthManager>,
     agent_manager: Res<AgentManager>,
+    mut test_action: EventWriter<ToClients<AgentActionPacket>>,
+    action_registry: Res<AgentActionRegistry>,
 ) {
     for FromClient { client_id, event } in events.read() {
         let agent = match agent_manager.agent_from_client_id(client_id, &auth_manager) {
@@ -93,6 +98,17 @@ pub(crate) fn summon_packet_system(
         if let Some(mut summoned_entity) = commands.get_entity(event.card_entity) {
             summoned_entity.remove::<OnHand>();
             summoned_entity.insert(OnSlot(event.slot_entity));
+            test_action.send(ToClients {
+                mode: SendMode::Direct(*client_id),
+                event: AgentActionPacket::from(
+                    *agent,
+                    event.board_entity,
+                    TargetAgentAction {},
+                    *action_registry
+                        .get_action_id::<TargetAgentAction>()
+                        .unwrap(),
+                ),
+            });
         } else {
             warn!("Client {:?} tried to summon a card that does not exist, on slot {:?}, on the board {:?}", client_id, event.slot_entity, event.board_entity);
         }

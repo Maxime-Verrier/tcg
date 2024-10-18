@@ -1,8 +1,10 @@
 use bevy::ecs::entity::MapEntities;
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{Board, BoardStage, EffectEvent, Tree};
+use crate::{Board, BoardStage, Tree};
+
+use super::{BoardActionRunner, BoardSequence};
 
 #[derive(Reflect, Serialize, Deserialize, Debug)]
 pub struct BoardState {
@@ -17,6 +19,13 @@ pub struct BoardState {
 
     #[serde(skip)]
     #[reflect(ignore)]
+    pub game_state: BoardGameState,
+
+    #[serde(skip)]
+    pub tick_triggers: Vec<(Entity, usize)>,
+
+    #[serde(skip)]
+    #[reflect(ignore)]
     pub(crate) current_tree: Option<Tree>,
 }
 
@@ -27,6 +36,8 @@ impl BoardState {
             current_turn_agent_index: 0,
             stage: BoardStage::Start,
             current_tree: None,
+            game_state: BoardGameState::Open,
+            tick_triggers: Vec::new(),
             agents,
         }
     }
@@ -35,7 +46,11 @@ impl BoardState {
         self.current_turn_agent = Some(self.agents[0]);
     }
 
-    pub fn trigger_effect(&mut self, card_entity: Entity) {
+    pub fn trigger_effect(&mut self, card_entity: Entity, effect_index: usize) {
+        self.tick_triggers.push((card_entity, effect_index));
+    }
+
+    pub fn activate_effect(&mut self, card_entity: Entity) {
         if let Some(ref mut tree) = self.current_tree {
             tree.push_card(card_entity);
         } else {
@@ -45,12 +60,6 @@ impl BoardState {
 
     pub fn get_current_turn_agent(&self) -> &Option<Entity> {
         &self.current_turn_agent
-    }
-}
-
-impl Board {
-    pub fn add_agent(&mut self, agent: Entity) {
-        self.state.agents.push(agent);
     }
 }
 
@@ -67,10 +76,35 @@ impl MapEntities for BoardState {
     }
 }
 
-pub fn board_effect_observer(trigger: Trigger<EffectEvent>, mut boards: Query<&mut Board>) {
-    let board = trigger.entity();
+#[derive(Debug, Default)]
+pub enum BoardGameState {
+    #[default]
+    Open,
+    Sequence(BoardSequence),
+    Action,
+}
 
-    if let Ok(mut board) = boards.get_mut(board) {
-        board.trigger_effect(trigger.event().0);
+pub(crate) fn board_state_update(
+    mut boards: Query<&mut Board>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for mut board in boards.iter_mut() {
+        match &mut board.state.game_state {
+            BoardGameState::Sequence(action) => {
+                action.channel_timer.tick(time.delta());
+
+                if action.channel_timer.finished() {
+                    action.runner.execute(&mut commands);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+impl Board {
+    pub fn add_agent(&mut self, agent: Entity) {
+        self.state.agents.push(agent);
     }
 }

@@ -4,11 +4,9 @@ use bevy::{
     prelude::*,
     utils::{hashbrown::HashSet, HashMap},
 };
-use serde::{Deserialize, Serialize};
 
 #[derive(Reflect, Default, Debug)]
 pub struct BoardLookup {
-    // Lookup maps
     pub(crate) slots_lookup: HashMap<IVec3, Entity>,
     pub(crate) on_slot_lookup: HashMap<IVec3, Entity>,
 
@@ -17,7 +15,7 @@ pub struct BoardLookup {
     pub on_hand_lookup: HashMap<Entity, BTreeSet<Entity>>,
     pub(crate) on_board_lookup: HashSet<Entity>,
 
-    /// Every entities that belong to a agent
+    /// Every entity that belong to a agent
     pub(crate) agent_lookup: HashMap<Entity, HashSet<Entity>>,
 
     pub(crate) on_field_lookup: HashSet<Entity>,

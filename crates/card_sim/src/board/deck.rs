@@ -1,4 +1,4 @@
-pub use bevy::prelude::*;
+use bevy::prelude::*;
 use rand::seq::SliceRandom;
 
 use crate::CardId;

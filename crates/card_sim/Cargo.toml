@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 bevy_replicon = { workspace = true }
+bevy_mod_picking = { workspace = true }
 serde = { workspace = true }
 rand = "0.8.5"
 epithet = { workspace = true }
