@@ -36,7 +36,7 @@ pub(crate) fn target_agent_action_callback(
                 .entity(*slot.1)
                 .insert(On::<Pointer<Click>>::run(
                     move |event: Listener<Pointer<Click>>, mut commands: Commands| {
-                        commands.entity(event.target).despawn_descendants();
+                        commands.entity(event.listener()).despawn_descendants();
                     },
                 ))
                 .with_children(|parent| {
