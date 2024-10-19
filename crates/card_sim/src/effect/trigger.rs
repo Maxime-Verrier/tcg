@@ -35,7 +35,7 @@ impl<T: Event + 'static + Send + Sync> Command for TriggerEffectsCommand<T> {
 
         if let Ok(mut board) = boards.get_mut(self.board) {
             for entity in board
-                .lookup
+                .cache
                 .get_entities()
                 .iter()
                 .cloned()

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{AgentOwned, Board, OnBoard};
 
-use super::BoardLookup;
+use super::BoardCache;
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct OnHand;
@@ -24,7 +24,7 @@ impl Component for OnHand {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(player) = player {
-                        board.lookup.insert_on_hand(player.0, entity);
+                        board.cache.insert_on_hand(player.0, entity);
                     }
                 }
             }
@@ -36,7 +36,7 @@ impl Component for OnHand {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(player) = player {
-                        board.lookup.remove_from_hand(player.0, &entity);
+                        board.cache.remove_from_hand(player.0, &entity);
                     }
                 }
             }
@@ -44,7 +44,7 @@ impl Component for OnHand {
     }
 }
 
-impl BoardLookup {
+impl BoardCache {
     pub(crate) fn insert_on_hand(&mut self, agent: Entity, entity: Entity) {
         self.on_hand_lookup.entry(agent).or_default().insert(entity);
     }

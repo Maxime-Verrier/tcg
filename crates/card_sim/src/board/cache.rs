@@ -6,7 +6,7 @@ use bevy::{
 };
 
 #[derive(Reflect, Default, Debug)]
-pub struct BoardLookup {
+pub struct BoardCache {
     pub(crate) slots_lookup: HashMap<IVec3, Entity>,
     pub(crate) on_slot_lookup: HashMap<IVec3, Entity>,
 
@@ -21,7 +21,7 @@ pub struct BoardLookup {
     pub(crate) on_field_lookup: HashSet<Entity>,
 }
 
-impl BoardLookup {
+impl BoardCache {
     // All the insert/remove functions that update the lookup table are private or pub(crate) cause the crate already automaticly call them when the component is added/removed
     pub(crate) fn insert_on_board(&mut self, entity: Entity) {
         self.on_board_lookup.insert(entity);

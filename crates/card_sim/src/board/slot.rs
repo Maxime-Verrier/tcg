@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Board, OnBoard, OnField};
 
-use super::BoardLookup;
+use super::BoardCache;
 
 #[derive(Bundle)]
 pub struct CardSlotBundle {
@@ -40,7 +40,7 @@ impl Component for BoardSlot {
                 world.get::<BoardSlot>(entity).cloned(),
             ) {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.insert_slot(slot.0, entity);
+                    board.cache.insert_slot(slot.0, entity);
                 }
             }
         });
@@ -51,8 +51,8 @@ impl Component for BoardSlot {
                 world.get::<BoardSlot>(entity).cloned(),
             ) {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.remove_slot(&slot.0);
-                    board.lookup.remove_from_slot(&slot.0); //TODO system that check invalid place state (multiple) and return to hand if the case or no place
+                    board.cache.remove_slot(&slot.0);
+                    board.cache.remove_from_slot(&slot.0); //TODO system that check invalid place state (multiple) and return to hand if the case or no place
                 }
                 if let Some(entity_in_slot) = slot.1 {
                     if let Some(mut entity_in_slot_commands) =
@@ -86,7 +86,7 @@ impl Component for OnSlot {
                 world.get::<BoardSlot>(entity).cloned(),
             ) {
                 if let Some(mut board) = world.get_mut::<Board>(on_board.0) {
-                    board.lookup.insert_on_slot(slot.0, entity);
+                    board.cache.insert_on_slot(slot.0, entity);
                 }
 
                 // Check if there is already an entity in the slot which should not be possible except if there was no verification before inserting it
@@ -108,7 +108,7 @@ impl Component for OnSlot {
                 world.get::<BoardSlot>(entity).cloned(),
             ) {
                 if let Some(mut board) = world.get_mut::<Board>(on_board.0) {
-                    board.lookup.remove_from_slot(&slot.0);
+                    board.cache.remove_from_slot(&slot.0);
                     world.get_mut::<BoardSlot>(entity).unwrap().1 = None; //TODO modify in future bevy update so there is no need to get it again
                 }
             }
@@ -122,7 +122,7 @@ impl MapEntities for OnSlot {
     }
 }
 
-impl BoardLookup {
+impl BoardCache {
     pub(crate) fn insert_slot(&mut self, pos: IVec3, entity: Entity) {
         self.slots_lookup.insert(pos, entity);
     }

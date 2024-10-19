@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Board, OnBoard};
 
-use super::BoardLookup;
+use super::BoardCache;
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct OnField;
@@ -19,21 +19,21 @@ impl Component for OnField {
         hooks.on_insert(|mut world, entity, _component_id| {
             if let Some(board_entity) = world.get::<OnBoard>(entity).cloned() {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.insert_on_field(entity);
+                    board.cache.insert_on_field(entity);
                 }
             }
         });
         hooks.on_remove(|mut world, entity, _component_id| {
             if let Some(board_entity) = world.get::<OnBoard>(entity).cloned() {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.remove_from_field(&entity);
+                    board.cache.remove_from_field(&entity);
                 }
             }
         });
     }
 }
 
-impl BoardLookup {
+impl BoardCache {
     pub(crate) fn insert_on_field(&mut self, entity: Entity) {
         self.on_field_lookup.insert(entity);
     }

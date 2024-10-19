@@ -90,7 +90,7 @@ pub(crate) fn summon_packet_system(
             continue;
         }
 
-        if !slots.contains(event.slot_entity) || !board.lookup.is_on_field(event.slot_entity) {
+        if !slots.contains(event.slot_entity) || !board.cache.is_on_field(event.slot_entity) {
             warn!("Client {:?} tried to summon to a slot {:?} that does not exist or is not on the field on the board {:?}", client_id, event.slot_entity,  event.board_entity);
             continue;
         }

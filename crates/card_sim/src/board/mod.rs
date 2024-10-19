@@ -1,7 +1,7 @@
 mod agent_action;
+mod cache;
 mod field;
 mod hand;
-mod lookup;
 mod packet;
 mod query;
 mod sequence;
@@ -12,9 +12,9 @@ mod tree;
 
 pub use agent_action::*;
 pub use agent_action::*;
+pub use cache::*;
 pub use field::*;
 pub use hand::*;
-pub use lookup::*;
 pub use packet::*;
 pub use query::*;
 pub use sequence::*;
@@ -83,7 +83,7 @@ pub struct Board {
     pub state: BoardState,
 
     #[serde(skip)]
-    pub lookup: BoardLookup,
+    pub cache: BoardCache,
 }
 
 impl Board {
@@ -91,7 +91,7 @@ impl Board {
         Self {
             client_is_on_board: None,
             state: BoardState::new(agents),
-            lookup: BoardLookup::default(),
+            cache: BoardCache::default(),
         }
     }
 
@@ -144,7 +144,7 @@ impl Component for Board {
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_remove(|mut world, board_entity, _component_id| {
             if let Some(field) = world.get::<Board>(board_entity) {
-                let entities: Vec<Entity> = field.lookup.on_board_lookup.iter().cloned().collect();
+                let entities: Vec<Entity> = field.cache.on_board_lookup.iter().cloned().collect();
 
                 for entity in entities {
                     world.commands().entity(entity).remove::<(
@@ -193,22 +193,22 @@ impl Component for OnBoard {
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.insert_on_board(entity);
+                    board.cache.insert_on_board(entity);
 
                     if let Some(agent) = agent {
-                        board.lookup.insert_by_agent(agent.0, entity);
+                        board.cache.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
-                            board.lookup.insert_on_hand(agent.0, entity);
+                            board.cache.insert_on_hand(agent.0, entity);
                         }
                     }
                     if on_field.is_some() {
-                        board.lookup.insert_on_field(entity);
+                        board.cache.insert_on_field(entity);
                     }
                     if let Some(slot) = slot {
-                        board.lookup.insert_slot(slot.0, entity);
+                        board.cache.insert_slot(slot.0, entity);
                     }
                     if let Some(slot) = temp_on_slot_slot {
-                        board.lookup.insert_on_slot(slot.0, entity);
+                        board.cache.insert_on_slot(slot.0, entity);
                     }
                 }
             }
@@ -230,22 +230,22 @@ impl Component for OnBoard {
 
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
-                    board.lookup.remove_from_board(&entity);
+                    board.cache.remove_from_board(&entity);
 
                     if let Some(agent) = agent {
                         if on_hand.is_some() {
-                            board.lookup.remove_from_hand(agent.0, &entity);
+                            board.cache.remove_from_hand(agent.0, &entity);
                         }
-                        board.lookup.remove_from_agent(agent.0, &entity);
+                        board.cache.remove_from_agent(agent.0, &entity);
                     }
                     if let Some(slot) = slot {
-                        board.lookup.remove_slot(&slot.0);
+                        board.cache.remove_slot(&slot.0);
                     }
                     if on_field.is_some() {
-                        board.lookup.remove_from_field(&entity);
+                        board.cache.remove_from_field(&entity);
                     }
                     if let Some(slot) = temp_on_slot_slot {
-                        board.lookup.remove_from_slot(&slot.0);
+                        board.cache.remove_from_slot(&slot.0);
                     }
                 }
             }
@@ -274,9 +274,9 @@ impl Component for AgentOwned {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(agent) = agent {
-                        board.lookup.insert_by_agent(agent.0, entity);
+                        board.cache.insert_by_agent(agent.0, entity);
                         if on_hand.is_some() {
-                            board.lookup.insert_on_hand(agent.0, entity);
+                            board.cache.insert_on_hand(agent.0, entity);
                         }
                     }
                 }
@@ -291,9 +291,9 @@ impl Component for AgentOwned {
             if let Some(board_entity) = board_entity {
                 if let Some(mut board) = world.get_mut::<Board>(board_entity.0) {
                     if let Some(agent) = agent {
-                        board.lookup.remove_from_agent(agent.0, &entity);
+                        board.cache.remove_from_agent(agent.0, &entity);
                         if on_hand.is_some() {
-                            board.lookup.remove_from_hand(agent.0, &entity);
+                            board.cache.remove_from_hand(agent.0, &entity);
                         }
                     }
                 }
@@ -319,7 +319,7 @@ pub(crate) fn board_agent_removed_observer(
     //TODO err print
     if let Ok(on_board) = query.get(trigger.entity()) {
         if let Ok(mut board) = boards.get_mut(on_board.0) {
-            board.lookup.clean_agent_associate_values(trigger.entity());
+            board.cache.clean_agent_associate_values(trigger.entity());
         }
     }
 }
