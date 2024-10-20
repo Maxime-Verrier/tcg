@@ -90,15 +90,12 @@ pub(crate) fn board_state_update(
     mut commands: Commands,
 ) {
     for mut board in boards.iter_mut() {
-        match &mut board.state.game_state {
-            BoardGameState::Sequence(action) => {
-                action.channel_timer.tick(time.delta());
+        if let BoardGameState::Sequence(action) = &mut board.state.game_state {
+            action.channel_timer.tick(time.delta());
 
-                if action.channel_timer.finished() {
-                    action.runner.execute(&mut commands);
-                }
+            if action.channel_timer.finished() {
+                action.runner.execute(&mut commands);
             }
-            _ => {}
         }
     }
 }

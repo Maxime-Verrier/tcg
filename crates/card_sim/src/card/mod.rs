@@ -11,7 +11,7 @@ use bevy_replicon::{
 use epithet::utils::LevelEntity;
 use serde::{Deserialize, Serialize};
 
-use crate::{Effect, EffectId, EffectInstance, Effects};
+use crate::{EffectId, EffectInstance, Effects};
 
 pub fn card_plugin(app: &mut App) {
     app.replicate::<Card>();

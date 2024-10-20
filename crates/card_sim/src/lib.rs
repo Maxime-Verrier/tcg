@@ -9,14 +9,6 @@ pub use effect::*;
 pub use query::*;
 
 use bevy::prelude::*;
-use bevy_replicon::{
-    client::ClientSet,
-    core::replication_registry::rule_fns::RuleFns,
-    prelude::{
-        server_or_singleplayer, AppRuleExt, ChannelKind, ClientEventAppExt, ServerEventAppExt,
-    },
-    server::ServerSet,
-};
 use epithet::agent::AgentManager;
 
 pub struct CardSimPlugin;

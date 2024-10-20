@@ -1,9 +1,7 @@
-use bevy::{ecs::entity::MapEntities, prelude::*};
-use bevy_replicon::prelude::FromClient;
-use epithet::{agent::AgentManager, net::AuthManager};
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{Board, BoardState};
+use super::BoardState;
 
 #[derive(Reflect, Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 pub enum BoardStage {

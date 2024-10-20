@@ -2,7 +2,6 @@ mod summon;
 mod target;
 
 use bevy_inspector_egui::egui::util::id_type_map::TypeId;
-use epithet::agent;
 pub use summon::*;
 pub use target::*;
 

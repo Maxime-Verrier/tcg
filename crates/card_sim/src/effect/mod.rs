@@ -4,7 +4,7 @@ mod trigger;
 pub use common::*;
 
 use bevy::{
-    ecs::{system::SystemId, world::Command},
+    ecs::system::SystemId,
     prelude::*,
     utils::HashMap,
 };

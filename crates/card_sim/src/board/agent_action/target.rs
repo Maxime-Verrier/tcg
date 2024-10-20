@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use bevy_mod_picking::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{AgentOwned, AgentSummonEvent, Board, BoardSlot};
+use crate::{AgentOwned, Board, BoardSlot};
 
-use super::{AgentAction, AgentActionInput, AgentActionPacket};
+use super::{AgentAction, AgentActionInput};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TargetAgentAction {}

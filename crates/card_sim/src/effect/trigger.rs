@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{Board, OnBoard};
+use crate::Board;
 
 use super::Effects;
 
