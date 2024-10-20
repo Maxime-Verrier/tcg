@@ -47,13 +47,13 @@ impl<T: Event + 'static + Send + Sync> Command for TriggerEffectsCommand<T> {
                         if let Some(effect) = effects.get_effect(*idx) {
                             board.trigger_effect(entity, *idx);
                         } else {
-                            warn!("EffectTrigger Commands entity indexs are broken, this should not be possible, skipping");
+                            warn!("EffectTriggerCommand: effects indexs are broken, this should not be possible, skipping");
                         }
                     }
                 }
             }
         } else {
-            warn!("EffectTrigger Commands entity has no board, skipping");
+            warn!("EffectTriggerCommand's entity has no board, skipping");
         }
     }
 }

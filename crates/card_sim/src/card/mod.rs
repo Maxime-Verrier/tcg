@@ -11,7 +11,7 @@ use bevy_replicon::{
 use epithet::utils::LevelEntity;
 use serde::{Deserialize, Serialize};
 
-use crate::{Effect, Effects};
+use crate::{Effect, EffectId, EffectInstance, Effects};
 
 pub fn card_plugin(app: &mut App) {
     app.replicate::<Card>();
@@ -51,7 +51,7 @@ pub struct CardRegistry {
 pub struct CardData {
     pub name: String,
     pub description: String,
-    pub effects: Vec<Box<dyn Effect + 'static + Send + Sync>>,
+    pub effects: Vec<EffectId>,
 }
 
 impl CardData {
@@ -65,7 +65,7 @@ impl CardData {
             Effects::new(
                 self.effects
                     .iter()
-                    .map(|effect| effect.instance())
+                    .map(|effect_id| EffectInstance::new(*effect_id))
                     .collect(),
             ),
         )

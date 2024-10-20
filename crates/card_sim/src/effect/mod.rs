@@ -3,7 +3,11 @@ mod trigger;
 
 pub use common::*;
 
-use bevy::{ecs::system::SystemId, prelude::*, utils::HashMap};
+use bevy::{
+    ecs::{system::SystemId, world::Command},
+    prelude::*,
+    utils::HashMap,
+};
 
 pub(crate) fn effect_plugin(app: &mut App) {}
 
@@ -40,14 +44,14 @@ pub fn setup_effects(effect_registry: ResMut<EffectRegistry>) {
 
 //TODO comments about invariants effects
 #[derive(Component, Default)]
-pub struct Effects(Vec<Box<dyn Effect + Send + Sync>>);
+pub struct Effects(Vec<EffectInstance>);
 
 impl Effects {
-    pub fn new(effects: Vec<Box<dyn Effect + Send + Sync>>) -> Self {
+    pub fn new(effects: Vec<EffectInstance>) -> Self {
         Self(effects)
     }
 
-    pub fn get_effect(&self, index: usize) -> Option<&Box<dyn Effect + Send + Sync>> {
+    pub fn get_effect(&self, index: usize) -> Option<&EffectInstance> {
         self.0.get(index)
     }
 }
@@ -59,38 +63,79 @@ pub struct EffectTrigger<T: 'static + Send + Sync> {
 }
 
 pub trait Effect {
-    fn activate(&self, world: &mut World, entity: Entity);
-    fn get_effect_spped(&self) -> i32;
-    fn instance(&self) -> Box<dyn Effect + 'static + Send + Sync>;
+    fn activate(&self, commands: &mut Commands, self_entity: Entity) -> Vec<Box<dyn EffectAction>>;
+    fn get_effect_speed(&self) -> i32;
 }
 
+#[derive(Clone, Copy)]
 pub struct EffectId(pub usize);
 
-pub struct EffectSystem {
-    system_id: SystemId,
-    effect_speed: i32,
+pub struct EffectInstance {
+    cooldown: usize,
+    effect_id: EffectId,
 }
 
-impl EffectSystem {
-    pub fn new(system_id: SystemId, effect_speed: i32) -> Self {
+impl EffectInstance {
+    pub fn new(effect_id: EffectId) -> Self {
         Self {
-            system_id,
-            effect_speed,
+            cooldown: 0,
+            effect_id,
         }
     }
 }
 
-impl Effect for EffectSystem {
-    fn activate(&self, world: &mut World, entity: Entity) {
-        world.run_system(self.system_id);
-    }
+pub trait EffectAction {
+    fn execute(&self, commands: &mut Commands, data: &EffectActionData);
+}
 
-    fn get_effect_spped(&self) -> i32 {
-        todo!()
-    }
+pub struct EffectState {
+    effect_index: usize,
+    effect_data: EffectActionData,
+}
 
-    fn instance(&self) -> Box<dyn Effect + 'static + Send + Sync> {
-        Box::new(EffectSystem::new(self.system_id, self.effect_speed))
+pub struct EffectActionDestroy {
+    targets_group: String,
+}
+
+impl EffectActionDestroy {
+    pub fn new(targets_group: String) -> Self {
+        Self { targets_group }
+    }
+}
+
+impl EffectAction for EffectActionDestroy {
+    fn execute(&self, commands: &mut Commands, data: &EffectActionData) {
+        if let Some(targets) = data.targets.get(&self.targets_group) {
+            for target in targets.iter() {
+                commands.entity(*target).despawn_recursive();
+            }
+        } else {
+            //TODO somehow fix this impossible state by cancelling this effect ig
+            error!("impossible state");
+        }
+    }
+}
+
+pub struct EffectActionData {
+    self_entity: Entity,
+    action_index: u8,
+    agent: Entity,
+    targets: HashMap<String, Vec<Entity>>,
+}
+
+impl EffectActionData {
+    pub fn new(
+        self_entity: Entity,
+        action_index: u8,
+        agent: Entity,
+        targets: HashMap<String, Vec<Entity>>,
+    ) -> Self {
+        Self {
+            self_entity,
+            action_index,
+            agent,
+            targets,
+        }
     }
 }
 
