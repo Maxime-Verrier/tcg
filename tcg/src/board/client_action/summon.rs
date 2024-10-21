@@ -43,7 +43,7 @@ pub mod summon_placeholder {
                 return;
             }
         };
-        for slot in board.lookup.get_slots() {
+        for slot in board.cache.get_slots() {
             if true
             /*slot_agent.0 == client_agent*/ /* Modify when client know which agent he play */
             {

@@ -32,7 +32,7 @@ mod cfg_hand_client_render {
     ) {
         for packet in packets.read() {
             if let Ok(board) = boards.get(packet.board) {
-                let hands = board.lookup.on_hand_lookup.iter();
+                let hands = board.cache.on_hand_lookup.iter();
 
                 for (hand_agent, hand) in hands {
                     let client_own_flag = *hand_agent == packet.agent;
